@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MOONLIT - Lab Requisition Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .lab-provider-selector {
+            background: #5a67d8;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .lab-provider-selector label {
+            color: white;
+            margin-right: 20px;
+            font-size: 16px;
+        }
+
+        .lab-provider-selector input[type="radio"] {
+            margin-right: 8px;
+            transform: scale(1.2);
+        }
+
+        .form-container {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #4a5568;
+            margin-bottom: 5px;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #cbd5e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        input[readonly] {
+            background-color: #f7fafc;
+            color: #718096;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .test-codes-container {
+            margin-bottom: 15px;
+        }
+
+        .test-code-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+
+        .test-selector {
+            flex: 2;
+        }
+
+        .test-code-display {
+            flex: 1;
+            padding: 10px 12px;
+            background: #f7fafc;
+            border: 1px solid #cbd5e0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 13px;
+        }
+
+        .btn-add {
+            background: #48bb78;
+            color: white;
+        }
+
+        .btn-add:hover {
+            background: #38a169;
+        }
+
+        .btn-manage {
+            background: #4299e1;
+            color: white;
+        }
+
+        .btn-manage:hover {
+            background: #3182ce;
+        }
+
+        .btn-remove {
+            background: #f56565;
+            color: white;
+            padding: 10px 15px;
+        }
+
+        .btn-remove:hover {
+            background: #e53e3e;
+        }
+
+        .btn-generate {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 16px;
+            padding: 14px 32px;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .btn-generate:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s;
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s;
+        }
+
+        .modal-header {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .modal-header h2 {
+            font-size: 24px;
+            color: #2d3748;
+        }
+
+        .modal-footer {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .lab-test-list {
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .lab-test-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            border-bottom: 1px solid #f7fafc;
+        }
+
+        .lab-test-item:last-child {
+            border-bottom: none;
+        }
+
+        .lab-test-info {
+            flex: 1;
+        }
+
+        .lab-test-name {
+            font-weight: 500;
+            color: #2d3748;
+        }
+
+        .lab-test-codes {
+            font-size: 12px;
+            color: #718096;
+            margin-top: 2px;
+        }
+
+        .status-message {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .status-success {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .status-error {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>MOONLIT Lab Requisition Generator</h1>
+            <p>Generate lab requisition forms for Quest or Labcorp</p>
+        </div>
+
+        <div class="lab-provider-selector">
+            <label>
+                <input type="radio" name="labProvider" value="labcorp" checked onchange="updateLabProvider()">
+                Labcorp
+            </label>
+            <label>
+                <input type="radio" name="labProvider" value="quest" onchange="updateLabProvider()">
+                Quest Diagnostics
+            </label>
+        </div>
+
+        <div class="form-container">
+            <!-- Provider Selection -->
+            <div class="section">
+                <h2 class="section-title">
+                    <span>Provider Selection</span>
+                    <button class="btn btn-manage btn-small" onclick="openProviderManager()">Manage Providers</button>
+                </h2>
+                <select id="provider" onchange="updateProviderInfo()">
+                    <!-- Providers will be populated dynamically -->
+                </select>
+            </div>
+
+            <!-- Provider Information -->
+            <div class="section">
+                <h2 class="section-title">Provider & Clinic Information</h2>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Provider Name</label>
+                        <input type="text" id="providerName" value="Merrick Reynolds" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Provider NPI</label>
+                        <input type="text" id="providerNPI" value="1295302339" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Clinic Name</label>
+                        <input type="text" id="clinicName" value="MOONLIT" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Clinic Phone</label>
+                        <input type="text" id="clinicPhone" value="385-246-2522" readonly>
+                    </div>
+                    <div class="form-group full-width">
+                        <label>Clinic Address</label>
+                        <input type="text" id="clinicAddress" value="6211 S Highland Drive, Holladay, UT 84121"
+                            readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Clinic Fax</label>
+                        <input type="text" id="clinicFax" value="801-810-1343" readonly>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Patient Information -->
+            <div class="section">
+                <h2 class="section-title">Patient Information</h2>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Patient Name *</label>
+                        <input type="text" id="patientName" placeholder="Last, First" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Date of Birth *</label>
+                        <input type="date" id="patientDOB" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Medicaid ID Number *</label>
+                        <input type="text" id="medicaidID" placeholder="Enter Medicaid ID" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Patient Phone</label>
+                        <input type="text" id="patientPhone" placeholder="(555) 555-5555">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Test Orders -->
+            <div class="section">
+                <h2 class="section-title">
+                    <span>Lab Tests</span>
+                    <button class="btn btn-manage btn-small" onclick="openLabManager()">Manage Lab Tests</button>
+                </h2>
+                <div class="test-codes-container" id="testCodesContainer">
+                    <div class="test-code-row">
+                        <select class="test-selector" onchange="updateTestCode(this)">
+                            <option value="">Select a test...</option>
+                        </select>
+                        <div class="test-code-display">Code: ---</div>
+                    </div>
+                </div>
+                <button class="btn btn-add" onclick="addTestRow()">+ Add Another Test</button>
+            </div>
+
+            <!-- Diagnosis -->
+            <div class="section">
+                <h2 class="section-title">Diagnosis Information</h2>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Primary Diagnosis Code (ICD-10) *</label>
+                        <input type="text" id="diagnosisCode" placeholder="e.g., F32.9" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Diagnosis Description</label>
+                        <input type="text" id="diagnosisDesc" placeholder="e.g., Major depressive disorder">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional Notes -->
+            <div class="section">
+                <h2 class="section-title">Additional Information</h2>
+                <div class="form-group">
+                    <label>Special Instructions (Optional)</label>
+                    <textarea id="specialInstructions"
+                        placeholder="Fasting required, specific handling instructions, etc."></textarea>
+                </div>
+            </div>
+
+            <button class="btn btn-generate" onclick="generatePDF()">Generate PDF Requisition</button>
+
+            <div id="statusMessage"></div>
+        </div>
+    </div>
+
+    <!-- Provider Manager Modal -->
+    <div id="providerManagerModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Manage Providers</h2>
+            </div>
+
+            <div class="section">
+                <h3 style="margin-bottom: 15px;">Add New Provider</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Provider Name</label>
+                        <input type="text" id="newProviderName" placeholder="e.g., John Smith">
+                    </div>
+                    <div class="form-group">
+                        <label>Degree/Suffix</label>
+                        <select id="newProviderSuffix">
+                            <option value="MD">MD</option>
+                            <option value="DO">DO</option>
+                            <option value="NP">NP</option>
+                            <option value="PA">PA</option>
+                            <option value="PhD">PhD</option>
+                        </select>
+                    </div>
+                    <div class="form-group full-width">
+                        <label>NPI Number</label>
+                        <input type="text" id="newProviderNPI" placeholder="10-digit NPI number">
+                    </div>
+                </div>
+                <button class="btn btn-add" onclick="addProvider()">Add Provider</button>
+            </div>
+
+            <div class="section">
+                <h3 style="margin-bottom: 10px;">Current Providers</h3>
+                <div class="lab-test-list" id="providerList">
+                    <!-- Providers will be populated here -->
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-small" onclick="closeProviderManager()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lab Test Manager Modal -->
+    <div id="labManagerModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Manage Lab Tests</h2>
+            </div>
+
+            <div class="section">
+                <h3 style="margin-bottom: 15px;">Add New Lab Test</h3>
+                <div class="form-grid">
+                    <div class="form-group full-width">
+                        <label>Test Name</label>
+                        <input type="text" id="newTestName" placeholder="e.g., Comprehensive Metabolic Panel">
+                    </div>
+                    <div class="form-group">
+                        <label>Labcorp Code</label>
+                        <input type="text" id="newLabcorpCode" placeholder="e.g., 322000">
+                    </div>
+                    <div class="form-group">
+                        <label>Quest Code</label>
+                        <input type="text" id="newQuestCode" placeholder="e.g., 10231">
+                    </div>
+                </div>
+                <button class="btn btn-add" onclick="addLabTest()">Add Lab Test</button>
+            </div>
+
+            <div class="section">
+                <h3 style="margin-bottom: 10px;">Saved Lab Tests</h3>
+                <div class="lab-test-list" id="labTestList">
+                    <!-- Lab tests will be populated here -->
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-small" onclick="closeLabManager()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize default lab tests if none exist
+        function initializeLabTests() {
+            if (!localStorage.getItem('moonlitLabTests')) {
+                const defaultTests = [
+                    {
+                        name: "Comprehensive Metabolic Panel (CMP)",
+                        labcorpCode: "322000",
+                        questCode: "10231"
+                    },
+                    {
+                        name: "Complete Blood Count with Differential",
+                        labcorpCode: "005009",
+                        questCode: "6399"
+                    },
+                    {
+                        name: "Thyroid Stimulating Hormone (TSH)",
+                        labcorpCode: "004259",
+                        questCode: "899"
+                    },
+                    {
+                        name: "Lipid Panel",
+                        labcorpCode: "303756",
+                        questCode: "7600"
+                    },
+                    {
+                        name: "Hemoglobin A1c",
+                        labcorpCode: "001453",
+                        questCode: "496"
+                    },
+                    {
+                        name: "Lithium Level",
+                        labcorpCode: "007708",
+                        questCode: "795"
+                    },
+                    {
+                        name: "Valproic Acid Level",
+                        labcorpCode: "001529",
+                        questCode: "1905"
+                    },
+                    {
+                        name: "Prolactin",
+                        labcorpCode: "004465",
+                        questCode: "746"
+                    },
+                    {
+                        name: "Vitamin D, 25-Hydroxy",
+                        labcorpCode: "081950",
+                        questCode: "17306"
+                    },
+                    {
+                        name: "Vitamin B12",
+                        labcorpCode: "001503",
+                        questCode: "927"
+                    }
+                ];
+                localStorage.setItem('moonlitLabTests', JSON.stringify(defaultTests));
+            }
+        }
+
+        // Initialize default providers if none exist
+        function initializeProviders() {
+            if (!localStorage.getItem('moonlitProviders')) {
+                const defaultProviders = [
+                    {
+                        id: "merrick",
+                        name: "Merrick Reynolds",
+                        npi: "1295302339",
+                        suffix: "MD"
+                    }
+                ];
+                localStorage.setItem('moonlitProviders', JSON.stringify(defaultProviders));
+            }
+        }
+
+        // Initialize on page load
+        window.addEventListener('DOMContentLoaded', function () {
+            initializeLabTests();
+            updateLabProvider();
+            loadLabTestSelectors();
+        });
+
+        function updateLabProvider() {
+            const provider = document.querySelector('input[name="labProvider"]:checked').value;
+            localStorage.setItem('selectedLabProvider', provider);
+            loadLabTestSelectors();
+        }
+
+        function loadLabTestSelectors() {
+            const labProvider = document.querySelector('input[name="labProvider"]:checked').value;
+            const tests = JSON.parse(localStorage.getItem('moonlitLabTests') || '[]');
+            const selectors = document.querySelectorAll('.test-selector');
+
+            selectors.forEach(selector => {
+                const currentValue = selector.value;
+                selector.innerHTML = '<option value="">Select a test...</option>';
+
+                tests.forEach(test => {
+                    const code = labProvider === 'labcorp' ? test.labcorpCode : test.questCode;
+                    if (code) {
+                        const option = document.createElement('option');
+                        option.value = JSON.stringify({ name: test.name, code: code });
+                        option.textContent = test.name;
+                        selector.appendChild(option);
+                    }
+                });
+
+                selector.value = currentValue;
+            });
+        }
+
+        function updateTestCode(selector) {
+            const codeDisplay = selector.parentElement.querySelector('.test-code-display');
+            if (selector.value) {
+                const testData = JSON.parse(selector.value);
+                codeDisplay.textContent = `Code: ${testData.code}`;
+            } else {
+                codeDisplay.textContent = 'Code: ---';
+            }
+        }
+
+        function updateProviderInfo() {
+            const select = document.getElementById('provider');
+            const providerNameInput = document.getElementById('providerName');
+            const providerNPIInput = document.getElementById('providerNPI');
+
+            if (select.value === 'other') {
+                providerNameInput.value = '';
+                providerNPIInput.value = '';
+                providerNameInput.removeAttribute('readonly');
+                providerNPIInput.removeAttribute('readonly');
+            } else {
+                const provider = providers[select.value];
+                providerNameInput.value = provider.name;
+                providerNPIInput.value = provider.npi;
+                providerNameInput.setAttribute('readonly', true);
+                providerNPIInput.setAttribute('readonly', true);
+            }
+        }
+
+        function addTestRow() {
+            const container = document.getElementById('testCodesContainer');
+            const newRow = document.createElement('div');
+            newRow.className = 'test-code-row';
+
+            const newSelector = document.createElement('select');
+            newSelector.className = 'test-selector';
+            newSelector.onchange = function () { updateTestCode(this); };
+
+            const codeDisplay = document.createElement('div');
+            codeDisplay.className = 'test-code-display';
+            codeDisplay.textContent = 'Code: ---';
+
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'btn btn-remove';
+            removeBtn.textContent = '×';
+            removeBtn.onclick = function () { removeTestRow(this); };
+
+            newRow.appendChild(newSelector);
+            newRow.appendChild(codeDisplay);
+            newRow.appendChild(removeBtn);
+
+            container.appendChild(newRow);
+
+            // Populate the new selector
+            const selectors = [newSelector];
+            const labProvider = document.querySelector('input[name="labProvider"]:checked').value;
+            const tests = JSON.parse(localStorage.getItem('moonlitLabTests') || '[]');
+
+            newSelector.innerHTML = '<option value="">Select a test...</option>';
+            tests.forEach(test => {
+                const code = labProvider === 'labcorp' ? test.labcorpCode : test.questCode;
+                if (code) {
+                    const option = document.createElement('option');
+                    option.value = JSON.stringify({ name: test.name, code: code });
+                    option.textContent = test.name;
+                    newSelector.appendChild(option);
+                }
+            });
+        }
+
+        function removeTestRow(button) {
+            button.parentElement.remove();
+        }
+
+        function openLabManager() {
+            document.getElementById('labManagerModal').classList.add('show');
+            loadLabTestList();
+        }
+
+        function closeLabManager() {
+            document.getElementById('labManagerModal').classList.remove('show');
+            loadLabTestSelectors();
+        }
+
+        function loadLabTestList() {
+            const tests = JSON.parse(localStorage.getItem('moonlitLabTests') || '[]');
+            const listContainer = document.getElementById('labTestList');
+
+            if (tests.length === 0) {
+                listContainer.innerHTML = '<p style="text-align: center; color: #718096;">No lab tests saved yet.</p>';
+                return;
+            }
+
+            listContainer.innerHTML = '';
+            tests.forEach((test, index) => {
+                const item = document.createElement('div');
+                item.className = 'lab-test-item';
+
+                const info = document.createElement('div');
+                info.className = 'lab-test-info';
+                info.innerHTML = `
+                    <div class="lab-test-name">${test.name}</div>
+                    <div class="lab-test-codes">
+                        Labcorp: ${test.labcorpCode || 'N/A'} | Quest: ${test.questCode || 'N/A'}
+                    </div>
+                `;
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'btn btn-remove btn-small';
+                deleteBtn.textContent = 'Delete';
+                deleteBtn.onclick = function () { deleteLabTest(index); };
+
+                item.appendChild(info);
+                item.appendChild(deleteBtn);
+                listContainer.appendChild(item);
+            });
+        }
+
+        function addLabTest() {
+            const name = document.getElementById('newTestName').value.trim();
+            const labcorpCode = document.getElementById('newLabcorpCode').value.trim();
+            const questCode = document.getElementById('newQuestCode').value.trim();
+
+            if (!name) {
+                alert('Please enter a test name');
+                return;
+            }
+
+            if (!labcorpCode && !questCode) {
+                alert('Please enter at least one test code (Labcorp or Quest)');
+                return;
+            }
+
+            const tests = JSON.parse(localStorage.getItem('moonlitLabTests') || '[]');
+            tests.push({
+                name: name,
+                labcorpCode: labcorpCode,
+                questCode: questCode
+            });
+
+            localStorage.setItem('moonlitLabTests', JSON.stringify(tests));
+
+            // Clear form
+            document.getElementById('newTestName').value = '';
+            document.getElementById('newLabcorpCode').value = '';
+            document.getElementById('newQuestCode').value = '';
+
+            loadLabTestList();
+            showStatus('Lab test added successfully!', 'success');
+        }
+
+        function deleteLabTest(index) {
+            if (confirm('Are you sure you want to delete this lab test?')) {
+                const tests = JSON.parse(localStorage.getItem('moonlitLabTests') || '[]');
+                tests.splice(index, 1);
+                localStorage.setItem('moonlitLabTests', JSON.stringify(tests));
+                loadLabTestList();
+            }
+        }
+
+        function generatePDF() {
+            const { jsPDF } = window.jspdf;
+            const labProvider = document.querySelector('input[name="labProvider"]:checked').value;
+
+            // Validate required fields
+            const required = ['patientName', 'patientDOB', 'medicaidID', 'diagnosisCode'];
+            let valid = true;
+
+            for (const field of required) {
+                const element = document.getElementById(field);
+                if (!element.value) {
+                    element.style.borderColor = '#f56565';
+                    valid = false;
+                } else {
+                    element.style.borderColor = '#cbd5e0';
+                }
+            }
+
+            // Check for at least one test
+            const testRows = document.querySelectorAll('.test-code-row');
+            const tests = [];
+            testRows.forEach(row => {
+                const selector = row.querySelector('.test-selector');
+                if (selector && selector.value) {
+                    const testData = JSON.parse(selector.value);
+                    tests.push(testData);
+                }
+            });
+
+            if (tests.length === 0) {
+                showStatus('Please add at least one test', 'error');
+                return;
+            }
+
+            if (!valid) {
+                showStatus('Please fill in all required fields', 'error');
+                return;
+            }
+
+            // Create PDF
+            const doc = new jsPDF();
+
+            // Header
+            const labName = labProvider === 'labcorp' ? 'LABCORP' : 'QUEST DIAGNOSTICS';
+            doc.setFontSize(18);
+            doc.setFont(undefined, 'bold');
+            doc.text(`${labName} LABORATORY REQUISITION`, 105, 20, { align: 'center' });
+
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            doc.text(`FAX TO ${labName}: Check local ${labProvider === 'labcorp' ? 'Labcorp' : 'Quest'} PSC for fax number`, 105, 28, { align: 'center' });
+
+            // Draw sections
+            let y = 40;
+
+            // Provider Section
+            doc.setFillColor(240, 240, 240);
+            doc.rect(15, y, 180, 8, 'F');
+            doc.setFont(undefined, 'bold');
+            doc.text('PROVIDER INFORMATION', 17, y + 5);
+            y += 12;
+
+            doc.setFont(undefined, 'normal');
+            doc.text(`Provider: ${document.getElementById('providerName').value}`, 20, y);
+            doc.text(`NPI: ${document.getElementById('providerNPI').value}`, 120, y);
+            y += 7;
+            doc.text(`Clinic: ${document.getElementById('clinicName').value}`, 20, y);
+            doc.text(`Phone: ${document.getElementById('clinicPhone').value}`, 120, y);
+            y += 7;
+            doc.text(`Address: ${document.getElementById('clinicAddress').value}`, 20, y);
+            y += 7;
+            doc.text(`Fax: ${document.getElementById('clinicFax').value}`, 20, y);
+            y += 12;
+
+            // Patient Section
+            doc.setFillColor(240, 240, 240);
+            doc.rect(15, y, 180, 8, 'F');
+            doc.setFont(undefined, 'bold');
+            doc.text('PATIENT INFORMATION', 17, y + 5);
+            y += 12;
+
+            doc.setFont(undefined, 'normal');
+            doc.text(`Patient Name: ${document.getElementById('patientName').value}`, 20, y);
+            doc.text(`DOB: ${formatDate(document.getElementById('patientDOB').value)}`, 120, y);
+            y += 7;
+            doc.text(`Medicaid ID: ${document.getElementById('medicaidID').value}`, 20, y);
+            if (document.getElementById('patientPhone').value) {
+                doc.text(`Phone: ${document.getElementById('patientPhone').value}`, 120, y);
+            }
+            y += 12;
+
+            // Insurance Section
+            doc.setFillColor(240, 240, 240);
+            doc.rect(15, y, 180, 8, 'F');
+            doc.setFont(undefined, 'bold');
+            doc.text('INSURANCE INFORMATION', 17, y + 5);
+            y += 12;
+
+            doc.setFont(undefined, 'normal');
+            doc.text('Insurance: UTAH MEDICAID FFS', 20, y);
+            y += 7;
+            doc.text(`Member ID: ${document.getElementById('medicaidID').value}`, 20, y);
+            y += 7;
+            doc.setFont(undefined, 'bold');
+            doc.text('[ ] BILL INSURANCE - DO NOT BILL PATIENT', 20, y);
+            y += 12;
+
+            // Tests Section
+            doc.setFillColor(240, 240, 240);
+            doc.rect(15, y, 180, 8, 'F');
+            doc.setFont(undefined, 'bold');
+            doc.text('TESTS ORDERED', 17, y + 5);
+            y += 12;
+
+            doc.setFont(undefined, 'normal');
+            tests.forEach(test => {
+                doc.text(`[ ] ${test.code} - ${test.name}`, 20, y);
+                y += 7;
+            });
+            y += 5;
+
+            // Diagnosis Section
+            doc.setFillColor(240, 240, 240);
+            doc.rect(15, y, 180, 8, 'F');
+            doc.setFont(undefined, 'bold');
+            doc.text('DIAGNOSIS', 17, y + 5);
+            y += 12;
+
+            doc.setFont(undefined, 'normal');
+            const diagDesc = document.getElementById('diagnosisDesc').value;
+            doc.text(`ICD-10: ${document.getElementById('diagnosisCode').value}${diagDesc ? ' - ' + diagDesc : ''}`, 20, y);
+            y += 12;
+
+            // Special Instructions
+            const instructions = document.getElementById('specialInstructions').value;
+            if (instructions) {
+                doc.setFillColor(240, 240, 240);
+                doc.rect(15, y, 180, 8, 'F');
+                doc.setFont(undefined, 'bold');
+                doc.text('SPECIAL INSTRUCTIONS', 17, y + 5);
+                y += 12;
+
+                doc.setFont(undefined, 'normal');
+                const lines = doc.splitTextToSize(instructions, 170);
+                lines.forEach(line => {
+                    doc.text(line, 20, y);
+                    y += 6;
+                });
+                y += 6;
+            }
+
+            // Signature Section
+            y += 10;
+            doc.setFont(undefined, 'bold');
+            doc.text('Provider Signature: _______________________________', 20, y);
+            y += 10;
+            doc.text(`Date: ${formatDate(new Date().toISOString().split('T')[0])}`, 20, y);
+            y += 7;
+            doc.setFont(undefined, 'normal');
+
+            // Get provider suffix if available
+            const providerSelect = document.getElementById('provider');
+            let providerSuffix = 'MD';
+            if (providerSelect.value !== 'other') {
+                const providers = JSON.parse(localStorage.getItem('moonlitProviders') || '[]');
+                const provider = providers.find(p => p.id === providerSelect.value);
+                if (provider && provider.suffix) {
+                    providerSuffix = provider.suffix;
+                }
+            }
+
+            doc.text(`${document.getElementById('providerName').value}, ${providerSuffix}`, 20, y);
+            doc.text(`NPI: ${document.getElementById('providerNPI').value}`, 20, y + 5);
+
+            // Footer
+            doc.setFontSize(8);
+            doc.text('Generated by MOONLIT Lab Requisition System', 105, 285, { align: 'center' });
+            doc.text(`Form generated on ${new Date().toLocaleString()}`, 105, 290, { align: 'center' });
+
+            // Save the PDF
+            const patientName = document.getElementById('patientName').value.replace(/[^a-z0-9]/gi, '_');
+            const date = new Date().toISOString().split('T')[0];
+            doc.save(`${labName}_Requisition_${patientName}_${date}.pdf`);
+
+            showStatus('PDF generated successfully! Check your downloads folder.', 'success');
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString + 'T00:00:00');
+            return (date.getMonth() + 1).toString().padStart(2, '0') + '/' +
+                date.getDate().toString().padStart(2, '0') + '/' +
+                date.getFullYear();
+        }
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.className = `status-message status-${type}`;
+            statusDiv.textContent = message;
+            statusDiv.style.display = 'block';
+
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 5000);
+        }
+    </script>
+</body>
+
+</html>
