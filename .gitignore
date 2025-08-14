@@ -23,15 +23,21 @@ Thumbs.db
 # Build files
 dist/
 build/
+frontend/build/
 
 # Test files
 coverage/
-*.test.js
 
 # Backup files
 *.backup
 *.bak
 
-# iCloud
-*.icloud
-.nosync
+# Runtime files
+.npm
+.eslintcache
+
+# Optional npm cache directory
+.npm
+
+# Optional REPL history
+.node_repl_history
