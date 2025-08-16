@@ -21,8 +21,7 @@ function App() {
         dob: '',
         medicaidId: '',
         phone: '',
-        insuranceProvider: 'UTAH MEDICAID FFS',
-        sex: ''  // Add this
+        insuranceProvider: 'UTAH MEDICAID FFS'  // Add this field
     });
     const [selectedTests, setSelectedTests] = useState([]);
     const [selectedDiagnosis, setSelectedDiagnosis] = useState({
@@ -145,9 +144,7 @@ function App() {
                 patientName: patientData.name,
                 patientDOB: patientData.dob,
                 patientPhone: patientData.phone,
-                patientSex: patientData.sex,  // ADD THIS LINE
                 medicaidId: patientData.medicaidId,
-                insuranceProvider: patientData.insuranceProvider,
                 tests: selectedTests,
                 diagnosisCode: selectedDiagnosis.code,
                 diagnosisDescription: selectedDiagnosis.description,
@@ -159,7 +156,7 @@ function App() {
             setSuccessMessage(`✅ Requisition created successfully! ID: ${result.requisition_number}`);
 
             // Clear form
-            setPatientData({ name: '', dob: '', medicaidId: '', phone: '', insuranceProvider: 'UTAH MEDICAID FFS' });
+            setPatientData({ name: '', dob: '', medicaidId: '', phone: '' });
             setSelectedTests([]);
             setSelectedDiagnosis({ code: '', description: '' });
             setSpecialInstructions('');

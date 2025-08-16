@@ -145,9 +145,8 @@ function App() {
                 patientName: patientData.name,
                 patientDOB: patientData.dob,
                 patientPhone: patientData.phone,
-                patientSex: patientData.sex,  // ADD THIS LINE
                 medicaidId: patientData.medicaidId,
-                insuranceProvider: patientData.insuranceProvider,
+                insuranceProvider: patientData.insuranceProvider,  // Add this line
                 tests: selectedTests,
                 diagnosisCode: selectedDiagnosis.code,
                 diagnosisDescription: selectedDiagnosis.description,

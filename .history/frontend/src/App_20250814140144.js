@@ -1,14 +1,13 @@
-// frontend/src/App.js
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import { api } from './services/api';
-import { downloadPDF, printPDF } from './services/pdfGenerator';
 import ProviderSelect from './components/ProviderSelect';
 import PatientForm from './components/PatientForm';
 import QuickTemplates from './components/QuickTemplates';
 import LabTestManager from './components/LabTestManager';
 import DiagnosisSearch from './components/DiagnosisSearch';
 import RequisitionList from './components/RequisitionList';
+import { downloadPDF, printPDF } from './services/pdfGenerator';
 
 function App() {
     const [currentView, setCurrentView] = useState('create');
@@ -20,9 +19,7 @@ function App() {
         name: '',
         dob: '',
         medicaidId: '',
-        phone: '',
-        insuranceProvider: 'UTAH MEDICAID FFS',
-        sex: ''  // Add this
+        phone: ''
     });
     const [selectedTests, setSelectedTests] = useState([]);
     const [selectedDiagnosis, setSelectedDiagnosis] = useState({
@@ -123,16 +120,15 @@ function App() {
                 patient_dob: patientData.dob,
                 patient_phone: patientData.phone,
                 medicaid_id: patientData.medicaidId,
-                insurance_provider: patientData.insuranceProvider,  // Add this line
                 lab_company: 'labcorp',
-                location_id: 'ecc663ed-3a8a-4c8d-a2a1-5bf5041daed5',
-                payer_id: 'dcf21dac-2711-4940-8b44-742045fc7235',
+                location_id: 'ecc663ed-3a8a-4c8d-a2a1-5bf5041daed5', // Murray Labcorp
+                payer_id: 'dcf21dac-2711-4940-8b44-742045fc7235', // Default to Southwest Behavioral Health
                 diagnosis_code: selectedDiagnosis.code,
                 diagnosis_description: selectedDiagnosis.description,
                 tests: selectedTests,
                 special_instructions: specialInstructions,
-                // created_by removed as per previous fix
-                status: 'draft'
+                created_by: 'bc0fc904-7cc9-4d22-a094-6a0eb482128d', // System user ID
+                status: 'pending'
             };
 
             const result = await api.createRequisition(requisitionData);
@@ -145,9 +141,7 @@ function App() {
                 patientName: patientData.name,
                 patientDOB: patientData.dob,
                 patientPhone: patientData.phone,
-                patientSex: patientData.sex,  // ADD THIS LINE
                 medicaidId: patientData.medicaidId,
-                insuranceProvider: patientData.insuranceProvider,
                 tests: selectedTests,
                 diagnosisCode: selectedDiagnosis.code,
                 diagnosisDescription: selectedDiagnosis.description,
@@ -159,7 +153,7 @@ function App() {
             setSuccessMessage(`✅ Requisition created successfully! ID: ${result.requisition_number}`);
 
             // Clear form
-            setPatientData({ name: '', dob: '', medicaidId: '', phone: '', insuranceProvider: 'UTAH MEDICAID FFS' });
+            setPatientData({ name: '', dob: '', medicaidId: '', phone: '' });
             setSelectedTests([]);
             setSelectedDiagnosis({ code: '', description: '' });
             setSpecialInstructions('');
@@ -172,22 +166,7 @@ function App() {
             setTimeout(() => {
                 setSuccessMessage('');
                 setErrorMessage('');
-                setShowPDFOptions(false);
             }, 10000);
-        }
-    };
-
-    const handleDownloadPDF = () => {
-        if (lastRequisition) {
-            downloadPDF(lastRequisition);
-            setSuccessMessage('PDF downloaded successfully!');
-            setTimeout(() => setSuccessMessage(''), 3000);
-        }
-    };
-
-    const handlePrintPDF = () => {
-        if (lastRequisition) {
-            printPDF(lastRequisition);
         }
     };
 
@@ -244,37 +223,7 @@ function App() {
                             {/* Success/Error Messages */}
                             {successMessage && (
                                 <div className="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
-                                    <div className="font-medium">{successMessage}</div>
-
-                                    {/* PDF Options after successful creation */}
-                                    {showPDFOptions && lastRequisition && (
-                                        <div className="mt-4 flex flex-col sm:flex-row gap-3">
-                                            <button
-                                                onClick={handleDownloadPDF}
-                                                className="flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                                            >
-                                                <svg className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                                                    <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-                                                </svg>
-                                                Download PDF
-                                            </button>
-                                            <button
-                                                onClick={handlePrintPDF}
-                                                className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                                            >
-                                                <svg className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                                                    <path fillRule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z" clipRule="evenodd" />
-                                                </svg>
-                                                Print Requisition
-                                            </button>
-                                            <button
-                                                onClick={() => setCurrentView('list')}
-                                                className="flex items-center justify-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-                                            >
-                                                View All Requisitions
-                                            </button>
-                                        </div>
-                                    )}
+                                    {successMessage}
                                 </div>
                             )}
                             {errorMessage && (

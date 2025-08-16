@@ -49,22 +49,6 @@ const PatientForm = ({ patientData, onPatientDataChange }) => {
 
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Sex *
-                    </label>
-                    <select
-                        value={patientData.sex}
-                        onChange={(e) => handleChange('sex', e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                        required
-                    >
-                        <option value="">Select...</option>
-                        <option value="M">Male</option>
-                        <option value="F">Female</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
                         Medicaid ID Number *
                     </label>
                     <input

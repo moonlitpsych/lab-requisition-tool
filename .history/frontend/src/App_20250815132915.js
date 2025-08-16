@@ -21,8 +21,7 @@ function App() {
         dob: '',
         medicaidId: '',
         phone: '',
-        insuranceProvider: 'UTAH MEDICAID FFS',
-        sex: ''  // Add this
+        insuranceProvider: 'UTAH MEDICAID FFS'  // Add this field
     });
     const [selectedTests, setSelectedTests] = useState([]);
     const [selectedDiagnosis, setSelectedDiagnosis] = useState({
@@ -123,15 +122,13 @@ function App() {
                 patient_dob: patientData.dob,
                 patient_phone: patientData.phone,
                 medicaid_id: patientData.medicaidId,
-                insurance_provider: patientData.insuranceProvider,  // Add this line
                 lab_company: 'labcorp',
-                location_id: 'ecc663ed-3a8a-4c8d-a2a1-5bf5041daed5',
-                payer_id: 'dcf21dac-2711-4940-8b44-742045fc7235',
+                location_id: 'ecc663ed-3a8a-4c8d-a2a1-5bf5041daed5', // Murray Labcorp
+                payer_id: 'dcf21dac-2711-4940-8b44-742045fc7235', // Default to Southwest Behavioral Health
                 diagnosis_code: selectedDiagnosis.code,
                 diagnosis_description: selectedDiagnosis.description,
                 tests: selectedTests,
                 special_instructions: specialInstructions,
-                // created_by removed as per previous fix
                 status: 'draft'
             };
 
@@ -145,9 +142,7 @@ function App() {
                 patientName: patientData.name,
                 patientDOB: patientData.dob,
                 patientPhone: patientData.phone,
-                patientSex: patientData.sex,  // ADD THIS LINE
                 medicaidId: patientData.medicaidId,
-                insuranceProvider: patientData.insuranceProvider,
                 tests: selectedTests,
                 diagnosisCode: selectedDiagnosis.code,
                 diagnosisDescription: selectedDiagnosis.description,
@@ -159,7 +154,7 @@ function App() {
             setSuccessMessage(`✅ Requisition created successfully! ID: ${result.requisition_number}`);
 
             // Clear form
-            setPatientData({ name: '', dob: '', medicaidId: '', phone: '', insuranceProvider: 'UTAH MEDICAID FFS' });
+            setPatientData({ name: '', dob: '', medicaidId: '', phone: '' });
             setSelectedTests([]);
             setSelectedDiagnosis({ code: '', description: '' });
             setSpecialInstructions('');

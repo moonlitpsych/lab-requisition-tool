@@ -1,16 +1,5 @@
 const express = require('express');
 const cors = require('cors');
-const corsOptions = {
-  origin: [
-    'http://localhost:3000',
-    'https://orderlabs.trymoonlit.com',
-    'https://trymoonlit.com'
-  ],
-  credentials: true
-};
-
-app.use(cors(corsOptions));
-
 require('dotenv').config();
 
 const app = express();
