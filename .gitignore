@@ -1,0 +1,79 @@
+# MOONLIT Lab Portal Automation - Git Ignore
+# Prevents committing sensitive data and build artifacts
+
+# Environment Variables (CRITICAL - Contains credentials)
+.env
+.env.local
+.env.*.local
+backend/.env
+frontend/.env
+
+# VSCode Local History (Contains .env copies with credentials)
+.history/
+
+# Dependencies
+node_modules/
+frontend/node_modules/
+backend/node_modules/
+
+# Logs (May contain sensitive runtime data)
+*.log
+logs/
+backend/*.log
+backend/logs/
+frontend/*.log
+frontend/logs/
+
+# Test Screenshots (May contain PHI/PII)
+test-screenshots/
+backend/test-screenshots/
+screenshots/
+automation-logs/
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+
+# OS Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Testing
+coverage/
+.nyc_output/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Package manager
+package-lock.json.backup
+yarn.lock.backup
+
+# Playwright
+playwright-report/
+test-results/
+
+# Session data (May contain auth tokens)
+sessions/
+*.session
+
+# Database dumps
+*.sql
+*.sqlite
+*.db
