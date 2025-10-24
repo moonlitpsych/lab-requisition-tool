@@ -11,6 +11,7 @@ const path = require('path');
 
 // Import routes
 const portalAutomationRoutes = require('./routes/portalAutomation');
+const labOrdersRoutes = require('./routes/labOrders');
 const patientRoutes = require('./routes/patients');
 const providerRoutes = require('./routes/providers');
 const resultsRoutes = require('./routes/results');
@@ -74,9 +75,15 @@ app.get('/health', (req, res) => {
 
 // API Routes
 app.use('/api/portal-automation', portalAutomationRoutes);
+app.use('/api/lab-orders', labOrdersRoutes); // New smart lab orders API
 app.use('/api/patients', patientRoutes);
 app.use('/api/providers', providerRoutes);
 app.use('/api/results', resultsRoutes);
+
+// Alias routes for compatibility with frontend
+app.get('/api/lab-tests', (req, res) => res.redirect(301, '/api/lab-orders/available-tests'));
+app.get('/api/icd10/psychiatric', (req, res) => res.redirect(301, '/api/lab-orders/available-diagnoses'));
+app.get('/api/templates', (req, res) => res.json({ success: true, templates: [] })); // Placeholder
 
 // Socket.io connection handling for real-time updates
 io.on('connection', (socket) => {

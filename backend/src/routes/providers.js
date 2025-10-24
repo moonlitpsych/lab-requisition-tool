@@ -18,17 +18,22 @@ const logger = winston.createLogger({
  */
 router.get('/', async (req, res) => {
     try {
-        const { data: providers, error } = await getSupabase()
-            .from('providers')
-            .select('*')
-            .eq('is_active', true)
-            .order('name');
-
-        if (error) throw error;
+        // Return default provider for now
+        // TODO: Connect to actual providers table when schema is ready
+        const providers = [{
+            id: 1,
+            name: 'MOONLIT PLLC',
+            npi: '1275348807',
+            clinicName: 'MOONLIT Psychiatry',
+            clinicAddress: 'Salt Lake City, UT',
+            phone: '',
+            fax: '',
+            isActive: true
+        }];
 
         res.json({
-            providers: providers || [],
-            count: providers?.length || 0
+            providers,
+            count: providers.length
         });
     } catch (error) {
         logger.error('Failed to get providers:', error);

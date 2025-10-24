@@ -1,5 +1,6 @@
 // frontend/src/App.js
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './App.css';
 import { api } from './services/api';
 import { downloadPDF, printPDF } from './services/pdfGenerator';
@@ -11,6 +12,7 @@ import DiagnosisSearch from './components/DiagnosisSearch';
 import RequisitionList from './components/RequisitionList';
 
 function App() {
+    const navigate = useNavigate();
     const [currentView, setCurrentView] = useState('create');
     const [providers, setProviders] = useState([]);
     const [labTests, setLabTests] = useState([]);
@@ -47,9 +49,10 @@ function App() {
                 api.getLabTests(),
                 api.getTemplates()
             ]);
-            setProviders(providersData);
-            setLabTests(labTestsData);
-            setTemplates(templatesData);
+            // Extract arrays from wrapped API responses
+            setProviders(providersData.providers || providersData || []);
+            setLabTests(labTestsData.tests || labTestsData || []);
+            setTemplates(templatesData.templates || templatesData || []);
         } catch (error) {
             console.error('Error loading initial data:', error);
             setErrorMessage('Failed to load data. Please refresh the page.');
@@ -197,8 +200,18 @@ function App() {
                 {/* Header */}
                 <div className="bg-white rounded-t-2xl shadow-xl">
                     <div className="bg-gradient-to-r from-gray-700 to-gray-800 text-white p-8 rounded-t-2xl">
-                        <h1 className="text-3xl font-bold text-center mb-2">MOONLIT Lab Requisition Tool</h1>
-                        <p className="text-center text-gray-200">Modern Lab Ordering for Psychiatric Care</p>
+                        <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                                <h1 className="text-3xl font-bold text-center mb-2">MOONLIT Lab Requisition Tool</h1>
+                                <p className="text-center text-gray-200">Modern Lab Ordering for Psychiatric Care</p>
+                            </div>
+                            <button
+                                onClick={() => navigate('/smart-lab-order')}
+                                className="bg-indigo-500 hover:bg-indigo-600 text-white px-6 py-3 rounded-lg font-medium transition-colors shadow-lg"
+                            >
+                                🚀 Try Smart Lab Order
+                            </button>
+                        </div>
                     </div>
 
                     {/* Lab Provider Selection */}

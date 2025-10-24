@@ -1,0 +1,524 @@
+/* Smart Lab Order Page Styles */
+
+.smart-lab-order {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.page-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.page-header h1 {
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+.page-header p {
+    color: #7f8c8d;
+    font-size: 16px;
+}
+
+/* Progress Steps */
+.progress-steps {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 40px;
+    padding: 0 20px;
+}
+
+.step {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    opacity: 0.5;
+}
+
+.step.active {
+    opacity: 1;
+}
+
+.step.completed {
+    opacity: 1;
+}
+
+.step-number {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #ecf0f1;
+    color: #7f8c8d;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    margin-bottom: 10px;
+    transition: all 0.3s;
+}
+
+.step.active .step-number {
+    background-color: #3498db;
+    color: white;
+}
+
+.step.completed .step-number {
+    background-color: #27ae60;
+    color: white;
+}
+
+.step.completed .step-number::after {
+    content: '✓';
+}
+
+.step-label {
+    font-size: 14px;
+    color: #7f8c8d;
+    text-align: center;
+}
+
+.step.active .step-label {
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+/* Order Content */
+.order-content {
+    background-color: white;
+    border-radius: 8px;
+    padding: 30px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.step-content h2 {
+    color: #2c3e50;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #ecf0f1;
+}
+
+/* Search Section */
+.search-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: #2c3e50;
+}
+
+.form-group input {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+/* Buttons */
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.btn-primary {
+    background-color: #3498db;
+    color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background-color: #2980b9;
+}
+
+.btn-secondary {
+    background-color: #95a5a6;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #7f8c8d;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-block {
+    width: 100%;
+    margin-top: 15px;
+}
+
+/* Patient List */
+.search-results {
+    margin-top: 30px;
+}
+
+.patient-list {
+    display: grid;
+    gap: 15px;
+}
+
+.patient-card {
+    padding: 15px;
+    border: 2px solid #ecf0f1;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.patient-card:hover {
+    border-color: #3498db;
+    box-shadow: 0 2px 8px rgba(52, 152, 219, 0.2);
+}
+
+.patient-card.selected {
+    border-color: #27ae60;
+    background-color: #d5f4e6;
+}
+
+.patient-name {
+    font-size: 18px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 5px;
+}
+
+.patient-details {
+    display: flex;
+    gap: 20px;
+    color: #7f8c8d;
+    font-size: 14px;
+}
+
+/* Selected Patient Info */
+.selected-patient-info {
+    margin-top: 30px;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+}
+
+.info-card {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    margin-top: 15px;
+}
+
+.info-card p {
+    margin: 10px 0;
+}
+
+/* Eligibility Status */
+.checking-eligibility {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 15px;
+    background-color: #fff3cd;
+    border-radius: 4px;
+    margin: 15px 0;
+}
+
+.spinner {
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.eligibility-status {
+    padding: 15px;
+    border-radius: 8px;
+    margin: 15px 0;
+}
+
+.eligibility-status.eligible {
+    background-color: #d5f4e6;
+    border: 1px solid #27ae60;
+}
+
+.eligibility-status.not-eligible {
+    background-color: #fdecea;
+    border: 1px solid #e74c3c;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.status-badge.success {
+    background-color: #27ae60;
+    color: white;
+}
+
+.status-badge.warning {
+    background-color: #f39c12;
+    color: white;
+}
+
+.plan-type {
+    color: #16a085;
+    font-weight: 500;
+}
+
+.address-info {
+    font-size: 14px;
+    color: #7f8c8d;
+    margin-top: 10px;
+}
+
+/* Test Selection */
+.selected-count {
+    background-color: #ecf0f1;
+    padding: 10px 15px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    font-weight: 600;
+}
+
+.tests-grid {
+    display: grid;
+    gap: 20px;
+}
+
+.test-category h3 {
+    color: #2c3e50;
+    font-size: 18px;
+    margin-bottom: 15px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #3498db;
+}
+
+.test-list {
+    display: grid;
+    gap: 10px;
+}
+
+.test-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px;
+    border: 2px solid #ecf0f1;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.test-item:hover {
+    border-color: #3498db;
+    background-color: #f8f9fa;
+}
+
+.test-item.selected {
+    border-color: #27ae60;
+    background-color: #d5f4e6;
+}
+
+.test-item input[type="checkbox"] {
+    margin-top: 2px;
+}
+
+.test-info {
+    flex: 1;
+}
+
+.test-name {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 3px;
+}
+
+.test-code {
+    font-size: 12px;
+    color: #7f8c8d;
+    margin-bottom: 3px;
+}
+
+.test-description {
+    font-size: 13px;
+    color: #95a5a6;
+    font-style: italic;
+}
+
+/* Diagnosis Selection */
+.diagnoses-list {
+    display: grid;
+    gap: 10px;
+    max-height: 500px;
+    overflow-y: auto;
+    padding-right: 10px;
+}
+
+.diagnosis-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px;
+    border: 2px solid #ecf0f1;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.diagnosis-item:hover {
+    border-color: #3498db;
+    background-color: #f8f9fa;
+}
+
+.diagnosis-item.selected {
+    border-color: #27ae60;
+    background-color: #d5f4e6;
+}
+
+.diagnosis-item input[type="checkbox"] {
+    margin-top: 2px;
+}
+
+.diagnosis-info {
+    flex: 1;
+}
+
+.diagnosis-code {
+    font-weight: 600;
+    color: #e74c3c;
+    margin-bottom: 3px;
+}
+
+.diagnosis-description {
+    color: #2c3e50;
+    font-size: 14px;
+}
+
+/* Step Actions */
+.step-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #ecf0f1;
+}
+
+/* Order Status */
+.order-status-card {
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+}
+
+.status-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #ecf0f1;
+}
+
+.status-header h3 {
+    margin: 0;
+    color: #2c3e50;
+}
+
+.status-badge.processing {
+    background-color: #3498db;
+    color: white;
+}
+
+.status-badge.completed {
+    background-color: #27ae60;
+    color: white;
+}
+
+.status-badge.failed {
+    background-color: #e74c3c;
+    color: white;
+}
+
+.status-message {
+    padding: 15px;
+    background-color: #d1ecf1;
+    border: 1px solid #bee5eb;
+    border-radius: 4px;
+    margin-bottom: 20px;
+}
+
+.order-summary {
+    background-color: white;
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+}
+
+.order-summary h4 {
+    margin-top: 0;
+    color: #2c3e50;
+}
+
+.status-info {
+    padding: 15px;
+    background-color: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 4px;
+    margin-bottom: 20px;
+}
+
+.cmo-notification {
+    margin-top: 10px;
+    font-weight: 600;
+    color: #856404;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .search-section {
+        grid-template-columns: 1fr;
+    }
+
+    .progress-steps {
+        flex-wrap: wrap;
+    }
+
+    .step {
+        flex-basis: 50%;
+        margin-bottom: 20px;
+    }
+
+    .step-actions {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .step-actions button {
+        width: 100%;
+    }
+}

@@ -16,9 +16,11 @@ const DiagnosisSearch = ({ selectedDiagnosis, onDiagnosisChange }) => {
     const loadPsychiatricDiagnoses = async () => {
         try {
             const data = await api.getPsychiatricDiagnoses();
-            setPsychiatricDiagnoses(data);
+            // Extract array from wrapped API response
+            setPsychiatricDiagnoses(data.diagnoses || data || []);
         } catch (error) {
             console.error('Error loading psychiatric diagnoses:', error);
+            setPsychiatricDiagnoses([]);
         }
     };
 

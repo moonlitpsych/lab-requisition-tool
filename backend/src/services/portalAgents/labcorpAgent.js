@@ -6,6 +6,9 @@ const winston = require('winston');
 const path = require('path');
 const fs = require('fs').promises;
 const { getLLMHelper } = require('./llmHelper');
+const insuranceHelper = require('./insuranceHelper');
+const medicaidEligibilityService = require('../medicaidEligibilityService');
+const emailNotificationService = require('../emailNotificationService');
 const {
     updateOrderStatus,
     logAutomation,
@@ -354,6 +357,9 @@ class LabcorpAgent {
             await this.saveSession();
             await this.takeScreenshot('03-dashboard');
 
+            // Dismiss any welcome popups or feature announcements
+            await this.dismissPopups();
+
             logger.info('Successfully logged into Labcorp Link');
             this.emitStatus('Login successful');
 
@@ -424,6 +430,70 @@ class LabcorpAgent {
     }
 
     /**
+     * Dismiss any popups, announcements, or modal dialogs
+     */
+    async dismissPopups() {
+        try {
+            logger.debug('Checking for popups/announcements to dismiss...');
+
+            // Common close button selectors
+            const closeSelectors = [
+                'button[aria-label*="Close"]',
+                'button[aria-label*="close"]',
+                'button[title*="Close"]',
+                'button[title*="close"]',
+                'button:has-text("Close")',
+                'button:has-text("X")',
+                'button:has-text("×")',
+                '.close',
+                '.modal-close',
+                '[class*="close"]',
+                '[data-dismiss="modal"]',
+                '.MuiDialog-root button[aria-label="Close"]',
+                'button.btn-close',
+                // Feature announcement specific
+                'button:has-text("Got it")',
+                'button:has-text("OK")',
+                'button:has-text("Dismiss")',
+                'button:has-text("Later")',
+                'button:has-text("Skip")',
+                // Cookie banners
+                'button:has-text("Accept")',
+                'button:has-text("I Understand")'
+            ];
+
+            let dismissed = false;
+            for (const selector of closeSelectors) {
+                try {
+                    const button = await this.page.$(selector);
+                    if (button) {
+                        const isVisible = await button.isVisible();
+                        if (isVisible) {
+                            await button.click();
+                            logger.info(`Dismissed popup using selector: ${selector}`);
+                            await this.delay(500);
+                            dismissed = true;
+                            break;
+                        }
+                    }
+                } catch (e) {
+                    // Continue to next selector
+                    continue;
+                }
+            }
+
+            if (!dismissed) {
+                logger.debug('No popups found to dismiss');
+            }
+
+            return dismissed;
+        } catch (error) {
+            logger.warn('Error while checking for popups:', error.message);
+            return false;
+        }
+    }
+
+    /**
      * Navigate to new order form
      */
     async navigateToOrderForm() {
@@ -431,23 +501,33 @@ class LabcorpAgent {
             logger.info('Navigating to new order form...');
             this.emitStatus('Opening new order form...');
 
-            // Look for New Order button
-            const newOrderSelectors = [
-                'button:has-text("New Order")',
-                'a:has-text("New Order")',
-                'button:has-text("Create Order")',
-                'a:has-text("Create Order")',
-                '[aria-label*="New Order"]'
+            // Dismiss any popups/announcements first
+            await this.dismissPopups();
+
+            // First, click on Lab Orders tile
+            const labOrdersTileSelectors = [
+                'text="Lab Orders"',
+                'h3:has-text("Lab Orders")',
+                'div:has-text("Lab Orders")',
+                '[aria-label*="Lab Orders"]',
+                '.card:has-text("Lab Orders")',
+                'button:has-text("Lab Orders")'
             ];
 
-            let clicked = false;
-            for (const selector of newOrderSelectors) {
+            let labOrdersClicked = false;
+            for (const selector of labOrdersTileSelectors) {
                 try {
-                    const button = await this.page.waitForSelector(selector, { timeout: 3000 });
-                    if (button) {
-                        await button.click();
-                        clicked = true;
-                        logger.debug(`Clicked: ${selector}`);
+                    const tile = await this.page.waitForSelector(selector, { timeout: 3000 });
+                    if (tile) {
+                        await tile.click();
+                        labOrdersClicked = true;
+                        logger.debug(`Clicked Lab Orders tile: ${selector}`);
+                        await this.page.waitForLoadState('networkidle');
+                        await this.delay(2000);
+
+                        // Dismiss any popups that might have appeared after clicking
+                        await this.dismissPopups();
+
                         break;
                     }
                 } catch (e) {
@@ -455,13 +535,138 @@ class LabcorpAgent {
                 }
             }
 
-            if (!clicked) {
-                throw new Error('Could not find New Order button');
+            if (!labOrdersClicked) {
+                logger.warn('Could not find Lab Orders tile, attempting direct New Order button search...');
             }
 
-            // Wait for order form to load
+            // Take screenshot to see where we are
+            await this.takeScreenshot('after-lab-orders');
+            logger.info('Now on patient search page...');
+
+            // IMPORTANT: The "Create New Patient" button is disabled until we perform a search
+            // We need to do a dummy search first to enable the button
+            logger.info('Performing dummy patient search to enable Create New Patient button...');
+
+            try {
+                // Fill in dummy search data (any values will do)
+                const lastNameField = await this.page.waitForSelector('input[name*="lastName"], input[id*="lastName"], input[placeholder*="Last Name"]', { timeout: 5000 });
+                if (lastNameField) {
+                    await lastNameField.fill('TestPatient');
+                    logger.debug('Filled last name field with dummy data');
+                }
+
+                // Click the Search button
+                const searchButton = await this.page.waitForSelector('button:has-text("Search")', { timeout: 3000 });
+                if (searchButton) {
+                    await searchButton.click();
+                    logger.debug('Clicked Search button');
+                    await this.delay(2000); // Wait for search to complete
+                }
+            } catch (e) {
+                logger.warn('Could not perform dummy search, trying to click button anyway:', e.message);
+            }
+
+            // Now the "Create New Patient" button should be enabled
+            logger.info('Looking for Create New Patient button (should now be enabled)...');
+
+            let clicked = false;
+            try {
+                // Wait for the button to be clickable
+                await this.delay(1000);
+
+                // Try to find and click the button using getByText
+                logger.debug('Searching for Create New Patient button with text matcher...');
+                await this.page.getByText('Create New Patient', { exact: true }).click({ timeout: 5000 });
+                clicked = true;
+                logger.info('Successfully clicked Create New Patient button using exact text match');
+            } catch (e) {
+                logger.warn('Exact text match failed, trying alternative selectors...');
+
+                // Fallback to other methods
+                const createNewPatientSelectors = [
+                    'button:text-is("Create New Patient")',
+                    'button:text("Create New Patient")',
+                    'a:text("Create New Patient")',
+                    'button[type="button"]:has-text("Create New Patient")',
+                    '[aria-label*="Create New Patient"]',
+                ];
+
+                for (const selector of createNewPatientSelectors) {
+                    try {
+                        const button = await this.page.waitForSelector(selector, { timeout: 3000 });
+                        if (button) {
+                            await button.click();
+                            clicked = true;
+                            logger.debug(`Clicked Create New Patient button: ${selector}`);
+                            break;
+                        }
+                    } catch (e2) {
+                        continue;
+                    }
+                }
+            }
+
+            if (!clicked) {
+                throw new Error('Could not find Create New Patient button after performing search');
+            }
+
+            // Wait for page to load
             await this.page.waitForLoadState('networkidle');
             await this.delay(2000);
+
+            // Take a screenshot to see what page we're on
+            await this.takeScreenshot('03-after-lab-orders');
+
+            // After clicking Lab Orders, we're on the patient search page
+            // Click "Create New Patient" button to get to the order form
+            logger.info('Now on patient search page, looking for Create New Patient button...');
+
+            const createPatientSelectors = [
+                'button:has-text("Create New Patient")',
+                'a:has-text("Create New Patient")',
+                '[aria-label*="Create New Patient"]',
+                'text="Create New Patient"',
+                // More specific selectors based on the UI
+                '.MuiButton-root:has-text("Create New Patient")',
+                '[class*="Button"]:has-text("Create New Patient")',
+                '//button[contains(text(), "Create New Patient")]',
+                '//a[contains(text(), "Create New Patient")]'
+            ];
+
+            let createPatientClicked = false;
+            for (const selector of createPatientSelectors) {
+                try {
+                    // Use a longer timeout since the button might take time to appear
+                    const button = await this.page.waitForSelector(selector, { timeout: 5000 });
+                    if (button) {
+                        // Make sure button is visible and clickable
+                        await button.scrollIntoViewIfNeeded();
+                        await this.delay(500);
+                        await button.click();
+                        createPatientClicked = true;
+                        logger.debug(`Clicked Create New Patient button: ${selector}`);
+                        await this.page.waitForLoadState('networkidle');
+                        await this.delay(2000);
+                        break;
+                    }
+                } catch (e) {
+                    continue;
+                }
+            }
+
+            if (!createPatientClicked) {
+                // Try one more time with a more aggressive approach
+                try {
+                    // Look for any element containing the text
+                    await this.page.click('text="Create New Patient"', { timeout: 5000 });
+                    createPatientClicked = true;
+                    logger.info('Clicked Create New Patient using text selector');
+                    await this.page.waitForLoadState('networkidle');
+                    await this.delay(2000);
+                } catch (e) {
+                    logger.warn('Could not find Create New Patient button after multiple attempts');
+                }
+            }
 
             await this.takeScreenshot('04-order-form');
             logger.info('Order form loaded');
@@ -474,110 +679,610 @@ class LabcorpAgent {
     }
 
     /**
-     * Fill patient information
+     * Fill patient information with Medicaid data enrichment
      */
     async fillPatientInfo(patientData) {
         try {
             logger.info('Filling patient information...');
             this.emitStatus('Entering patient details...');
 
-            // First check if we need to search for existing patient
-            const searchSelectors = [
-                'input[placeholder*="patient"]',
-                'input[placeholder*="Patient"]',
-                'input[name*="patient"]',
-                'input[aria-label*="patient"]'
-            ];
+            // CRITICAL: If patient has Medicaid info, get demographics from Medicaid X12 271
+            // This ensures we use the EXACT address that Labcorp expects (from Medicaid)
+            let enrichedPatientData = { ...patientData };
 
-            let searchField = null;
-            for (const selector of searchSelectors) {
-                searchField = await this.page.$(selector);
-                if (searchField) break;
-            }
+            if (patientData.medicaidId || patientData.useMedicaidData) {
+                try {
+                    logger.info('Fetching patient demographics from Utah Medicaid...');
+                    this.emitStatus('Verifying Medicaid eligibility...');
 
-            if (searchField) {
-                // Try searching for existing patient first
-                await searchField.fill(`${patientData.lastName}, ${patientData.firstName}`);
-                await this.delay(1000);
-                await this.page.keyboard.press('Enter');
-                await this.delay(2000);
+                    const medicaidData = await medicaidEligibilityService.checkEligibility({
+                        firstName: patientData.firstName,
+                        lastName: patientData.lastName,
+                        dateOfBirth: patientData.dateOfBirth,
+                        medicaidId: patientData.medicaidId
+                    });
 
-                // Check if patient was found
-                const patientFound = await this.page.$(`text=${patientData.lastName}`);
-                if (patientFound) {
-                    await patientFound.click();
-                    logger.info('Selected existing patient');
-                    return true;
+                    if (medicaidData.isEligible && medicaidData.demographics) {
+                        logger.info('Using Medicaid demographics for form population (prevents address corrections!)');
+
+                        // Use Medicaid data - this is what Labcorp expects!
+                        enrichedPatientData = {
+                            ...patientData,
+                            // Override with Medicaid's exact data
+                            firstName: medicaidData.demographics.firstName || patientData.firstName,
+                            lastName: medicaidData.demographics.lastName || patientData.lastName,
+                            dateOfBirth: medicaidData.demographics.dateOfBirth || patientData.dateOfBirth,
+                            medicaidId: medicaidData.medicaidId || patientData.medicaidId,
+                            address: medicaidData.demographics.address || patientData.address,
+                            // Flag that we're using Medicaid data
+                            usingMedicaidDemographics: true
+                        };
+
+                        logger.info(`Medicaid address: ${medicaidData.demographics.address.street}, ${medicaidData.demographics.address.city}, ${medicaidData.demographics.address.state} ${medicaidData.demographics.address.zip}`);
+                    } else {
+                        logger.warn('Medicaid eligibility check returned no data - using provided patient data');
+                    }
+                } catch (medicaidError) {
+                    logger.warn('Medicaid eligibility check failed - proceeding with provided data:', medicaidError.message);
+                    // Continue with original data if Medicaid check fails
                 }
             }
 
-            // If not found or no search, fill new patient form
-            logger.info('Creating new patient record...');
+            // Update reference to use enriched data
+            patientData = enrichedPatientData;
 
-            // Fill first name
-            const firstNameSelectors = [
-                'input[name*="first"]',
-                'input[placeholder*="First"]',
-                'input[aria-label*="First Name"]'
+            // IMPORTANT: First select Bill Method (required field)
+            logger.info('Selecting Bill Method...');
+            const billMethodSelectors = [
+                'select[name*="billMethod"]',
+                'select[name*="BillMethod"]',
+                'select[id*="billMethod"]',
+                'select:has-option:has-text("Medicaid")',
+                'div:has-text("Bill Method") + select',
+                'label:has-text("Bill Method") ~ select'
             ];
 
-            for (const selector of firstNameSelectors) {
-                const field = await this.page.$(selector);
-                if (field) {
-                    await field.fill(patientData.firstName);
-                    break;
+            let billMethodDropdown = null;
+            for (const selector of billMethodSelectors) {
+                try {
+                    billMethodDropdown = await this.page.$(selector);
+                    if (billMethodDropdown) {
+                        logger.debug(`Found Bill Method dropdown: ${selector}`);
+                        break;
+                    }
+                } catch (e) {
+                    continue;
                 }
+            }
+
+            if (billMethodDropdown) {
+                // Determine bill method based on insurance
+                const billMethod = insuranceHelper.isMedicaid(patientData.insuranceProvider) ? 'Medicaid' :
+                                 insuranceHelper.isMedicare(patientData.insuranceProvider) ? 'Medicare' :
+                                 'Client';
+
+                logger.info(`Selecting Bill Method: ${billMethod}`);
+
+                try {
+                    // Try selecting by label first
+                    await billMethodDropdown.selectOption({ label: billMethod });
+                } catch (e) {
+                    // If that fails, try by value
+                    try {
+                        await billMethodDropdown.selectOption({ value: billMethod });
+                    } catch (e2) {
+                        logger.warn(`Could not select bill method ${billMethod}, trying first available option`);
+                        // Select first non-empty option as fallback
+                        await billMethodDropdown.selectOption({ index: 1 });
+                    }
+                }
+
+                await this.delay(500);
+            } else {
+                logger.warn('Could not find Bill Method dropdown - form may have changed');
+            }
+
+            // Fill new patient form
+            logger.info('Filling patient information fields...');
+
+            // Fill first name - look for input near "First Name" label
+            const firstNameField = await this.page.locator('input').filter({ hasText: /^$/ }).first();
+            const firstNameByLabel = await this.page.locator('label:has-text("First Name")').locator('..').locator('input').first();
+
+            try {
+                // Try to find by looking for the label
+                const firstNameInput = await this.page.$$('input');
+                for (const input of firstNameInput) {
+                    const id = await input.getAttribute('id');
+                    const name = await input.getAttribute('name');
+                    const placeholder = await input.getAttribute('placeholder');
+
+                    if ((name && name.toLowerCase().includes('first')) ||
+                        (id && id.toLowerCase().includes('first')) ||
+                        (placeholder && placeholder.toLowerCase().includes('first'))) {
+                        await input.fill(patientData.firstName);
+                        logger.debug(`Filled first name: ${patientData.firstName}`);
+                        break;
+                    }
+                }
+            } catch (e) {
+                logger.warn('Could not fill first name:', e.message);
             }
 
             // Fill last name
-            const lastNameSelectors = [
-                'input[name*="last"]',
-                'input[placeholder*="Last"]',
-                'input[aria-label*="Last Name"]'
-            ];
+            try {
+                const lastNameInput = await this.page.$$('input');
+                for (const input of lastNameInput) {
+                    const id = await input.getAttribute('id');
+                    const name = await input.getAttribute('name');
+                    const placeholder = await input.getAttribute('placeholder');
 
-            for (const selector of lastNameSelectors) {
-                const field = await this.page.$(selector);
-                if (field) {
-                    await field.fill(patientData.lastName);
-                    break;
+                    if ((name && name.toLowerCase().includes('last')) ||
+                        (id && id.toLowerCase().includes('last')) ||
+                        (placeholder && placeholder.toLowerCase().includes('last'))) {
+                        await input.fill(patientData.lastName);
+                        logger.debug(`Filled last name: ${patientData.lastName}`);
+                        break;
+                    }
                 }
+            } catch (e) {
+                logger.warn('Could not fill last name:', e.message);
             }
 
             // Fill date of birth
-            const dobSelectors = [
-                'input[type="date"]',
-                'input[name*="birth"]',
-                'input[name*="dob"]',
-                'input[placeholder*="DOB"]'
-            ];
+            try {
+                const dobInput = await this.page.$$('input');
+                for (const input of dobInput) {
+                    const id = await input.getAttribute('id');
+                    const name = await input.getAttribute('name');
+                    const placeholder = await input.getAttribute('placeholder');
 
-            for (const selector of dobSelectors) {
-                const field = await this.page.$(selector);
-                if (field) {
-                    await field.fill(patientData.dateOfBirth);
-                    break;
+                    if ((name && (name.toLowerCase().includes('birth') || name.toLowerCase().includes('dob'))) ||
+                        (id && (id.toLowerCase().includes('birth') || id.toLowerCase().includes('dob'))) ||
+                        (placeholder && (placeholder.toLowerCase().includes('mm/dd/yyyy') || placeholder.toLowerCase().includes('birth')))) {
+                        // Format date as MM/DD/YYYY if needed
+                        let formattedDate = patientData.dateOfBirth;
+                        if (patientData.dateOfBirth.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                            const [year, month, day] = patientData.dateOfBirth.split('-');
+                            formattedDate = `${month}/${day}/${year}`;
+                        }
+                        await input.fill(formattedDate);
+                        logger.debug(`Filled date of birth: ${formattedDate}`);
+                        break;
+                    }
+                }
+            } catch (e) {
+                logger.warn('Could not fill DOB:', e.message);
+            }
+
+            // Fill gender dropdown
+            try {
+                const genderSelect = await this.page.$$('select');
+                for (const select of genderSelect) {
+                    const id = await select.getAttribute('id');
+                    const name = await select.getAttribute('name');
+
+                    if ((name && name.toLowerCase().includes('gender')) ||
+                        (id && id.toLowerCase().includes('gender'))) {
+                        const gender = patientData.gender || 'Male';
+                        await select.selectOption({ label: gender });
+                        logger.debug(`Selected gender: ${gender}`);
+                        break;
+                    }
+                }
+            } catch (e) {
+                logger.warn('Could not fill gender:', e.message);
+            }
+
+            // Fill address (CRITICAL: Use Medicaid address if available!)
+            if (patientData.address) {
+                // Street address
+                try {
+                    const addressInputs = await this.page.$$('input');
+                    for (const input of addressInputs) {
+                        const id = await input.getAttribute('id');
+                        const name = await input.getAttribute('name');
+                        const placeholder = await input.getAttribute('placeholder');
+
+                        if ((name && (name.toLowerCase().includes('address') || name.toLowerCase().includes('street'))) ||
+                            (id && (id.toLowerCase().includes('address') || id.toLowerCase().includes('street'))) ||
+                            (placeholder && placeholder.toLowerCase().includes('address'))) {
+                            if (patientData.address.street) {
+                                await input.fill(patientData.address.street);
+                                logger.debug(`Filled address: ${patientData.address.street}`);
+                                break;
+                            }
+                        }
+                    }
+                } catch (e) {
+                    logger.warn('Could not fill address:', e.message);
+                }
+
+                // City
+                try {
+                    const cityInputs = await this.page.$$('input');
+                    for (const input of cityInputs) {
+                        const id = await input.getAttribute('id');
+                        const name = await input.getAttribute('name');
+                        const placeholder = await input.getAttribute('placeholder');
+
+                        if ((name && name.toLowerCase().includes('city')) ||
+                            (id && id.toLowerCase().includes('city')) ||
+                            (placeholder && placeholder.toLowerCase().includes('city'))) {
+                            if (patientData.address.city) {
+                                await input.fill(patientData.address.city);
+                                logger.debug(`Filled city: ${patientData.address.city}`);
+                                break;
+                            }
+                        }
+                    }
+                } catch (e) {
+                    logger.warn('Could not fill city:', e.message);
+                }
+
+                // State
+                try {
+                    const stateSelects = await this.page.$$('select');
+                    for (const select of stateSelects) {
+                        const id = await select.getAttribute('id');
+                        const name = await select.getAttribute('name');
+
+                        if ((name && name.toLowerCase().includes('state')) ||
+                            (id && id.toLowerCase().includes('state'))) {
+                            if (patientData.address.state) {
+                                await select.selectOption({ label: patientData.address.state });
+                                logger.debug(`Filled state: ${patientData.address.state}`);
+                                break;
+                            }
+                        }
+                    }
+                } catch (e) {
+                    logger.warn('Could not fill state:', e.message);
+                }
+
+                // ZIP code
+                try {
+                    const zipInputs = await this.page.$$('input');
+                    for (const input of zipInputs) {
+                        const id = await input.getAttribute('id');
+                        const name = await input.getAttribute('name');
+                        const placeholder = await input.getAttribute('placeholder');
+
+                        if ((name && (name.toLowerCase().includes('zip') || name.toLowerCase().includes('postal'))) ||
+                            (id && (id.toLowerCase().includes('zip') || id.toLowerCase().includes('postal'))) ||
+                            (placeholder && placeholder.toLowerCase().includes('postal'))) {
+                            if (patientData.address.zip) {
+                                await input.fill(patientData.address.zip);
+                                logger.debug(`Filled ZIP: ${patientData.address.zip}`);
+                                break;
+                            }
+                        }
+                    }
+                } catch (e) {
+                    logger.warn('Could not fill ZIP:', e.message);
+                }
+
+                if (patientData.usingMedicaidDemographics) {
+                    logger.info('✅ Used Medicaid address data - should prevent address correction prompts!');
                 }
             }
 
             // Fill phone if provided
             if (patientData.phone) {
-                const phoneField = await this.page.$('input[type="tel"], input[name*="phone"]');
-                if (phoneField) {
-                    await phoneField.fill(patientData.phone);
+                try {
+                    const phoneInputs = await this.page.$$('input');
+                    for (const input of phoneInputs) {
+                        const id = await input.getAttribute('id');
+                        const name = await input.getAttribute('name');
+                        const type = await input.getAttribute('type');
+
+                        if ((name && name.toLowerCase().includes('phone')) ||
+                            (id && id.toLowerCase().includes('phone')) ||
+                            type === 'tel') {
+                            await input.fill(patientData.phone);
+                            logger.debug(`Filled phone: ${patientData.phone}`);
+                            break;
+                        }
+                    }
+
+                    // Also fill Phone Type dropdown
+                    const phoneTypeSelects = await this.page.$$('select');
+                    for (const select of phoneTypeSelects) {
+                        const id = await select.getAttribute('id');
+                        const name = await select.getAttribute('name');
+
+                        if ((name && name.toLowerCase().includes('phonetype')) ||
+                            (id && id.toLowerCase().includes('phonetype'))) {
+                            // Try different phone type options
+                            try {
+                                await select.selectOption({ label: 'Mobile' });
+                                logger.debug('Selected phone type: Mobile');
+                            } catch (e) {
+                                try {
+                                    await select.selectOption({ label: 'Home' });
+                                    logger.debug('Selected phone type: Home');
+                                } catch (e2) {
+                                    try {
+                                        await select.selectOption({ label: 'Cell' });
+                                        logger.debug('Selected phone type: Cell');
+                                    } catch (e3) {
+                                        logger.warn('Could not select phone type');
+                                    }
+                                }
+                            }
+                            break;
+                        }
+                    }
+                } catch (e) {
+                    logger.warn('Could not fill phone:', e.message);
                 }
             }
 
-            // Fill Medicaid ID if provided
-            if (patientData.medicaidId) {
-                const idField = await this.page.$('input[name*="medicaid"], input[name*="insurance"]');
-                if (idField) {
-                    await idField.fill(patientData.medicaidId);
+            // Handle Phone Usage dropdown if visible
+            try {
+                const phoneUsageSelects = await this.page.$$('select');
+                for (const select of phoneUsageSelects) {
+                    const id = await select.getAttribute('id');
+                    const name = await select.getAttribute('name');
+
+                    if ((name && name.toLowerCase().includes('phoneusage')) ||
+                        (id && id.toLowerCase().includes('phoneusage'))) {
+                        try {
+                            // Try to select "Landline" or first available option
+                            await select.selectOption({ index: 1 }); // Skip "Select" and pick first real option
+                            logger.debug('Selected phone usage (index 1)');
+                        } catch (e) {
+                            logger.warn('Could not select phone usage');
+                        }
+                        break;
+                    }
+                }
+            } catch (e) {
+                logger.warn('Could not fill phone usage:', e.message);
+            }
+
+            await this.delay(500);
+
+            // Handle insurance information with intelligent helper
+            // This section fills the Insurance Information/Responsible Party form at the bottom
+            if (patientData.insuranceProvider || patientData.medicaidId || patientData.medicareId) {
+                logger.info('Processing insurance information section...');
+
+                // Determine insurance type and billing method
+                const isMedicaid = insuranceHelper.isMedicaid(patientData.insuranceProvider);
+                const isMedicare = insuranceHelper.isMedicare(patientData.insuranceProvider);
+                const billMethod = insuranceHelper.getBillMethod(patientData.insuranceProvider);
+                const payorCode = insuranceHelper.getPayorCode(patientData.insuranceProvider);
+
+                logger.info(`Insurance: ${patientData.insuranceProvider}, Bill Method: ${billMethod}, Payor Code: ${payorCode}`);
+
+                // For Medicaid, we need to fill: Payor Code, Insurance Name, Insurance ID
+                // First, let's find and fill the Payor Code input (typically labeled "Enter Payor Code")
+                try {
+                    const payorCodeInputs = await this.page.$$('input');
+                    for (const input of payorCodeInputs) {
+                        const id = await input.getAttribute('id');
+                        const name = await input.getAttribute('name');
+                        const placeholder = await input.getAttribute('placeholder');
+
+                        if ((name && name.toLowerCase().includes('payor')) ||
+                            (id && id.toLowerCase().includes('payor')) ||
+                            (placeholder && placeholder.toLowerCase().includes('payor'))) {
+                            if (payorCode) {
+                                await input.fill(payorCode);
+                                logger.info(`Filled payor code: ${payorCode}`);
+                                await this.delay(500);
+                                break;
+                            }
+                        }
+                    }
+                } catch (e) {
+                    logger.warn('Could not fill payor code:', e.message);
+                }
+
+                // Fill Insurance Name
+                try {
+                    const insuranceNameInputs = await this.page.$$('input');
+                    for (const input of insuranceNameInputs) {
+                        const id = await input.getAttribute('id');
+                        const name = await input.getAttribute('name');
+                        const placeholder = await input.getAttribute('placeholder');
+
+                        if ((name && name.toLowerCase().includes('insurancename')) ||
+                            (id && id.toLowerCase().includes('insurancename'))) {
+                            if (patientData.insuranceProvider) {
+                                await input.fill(patientData.insuranceProvider);
+                                logger.info(`Filled insurance name: ${patientData.insuranceProvider}`);
+                                await this.delay(500);
+                                break;
+                            }
+                        }
+                    }
+                } catch (e) {
+                    logger.warn('Could not fill insurance name:', e.message);
+                }
+
+                // Fill Insurance ID (member ID)
+                const insuranceId = patientData.medicaidId || patientData.medicareId || patientData.insuranceId;
+                if (insuranceId) {
+                    try {
+                        const insuranceIdInputs = await this.page.$$('input');
+                        for (const input of insuranceIdInputs) {
+                            const id = await input.getAttribute('id');
+                            const name = await input.getAttribute('name');
+
+                            if ((name && (name.toLowerCase().includes('insuranceid') || name.toLowerCase().includes('memberid'))) ||
+                                (id && (id.toLowerCase().includes('insuranceid') || id.toLowerCase().includes('memberid')))) {
+                                await input.fill(insuranceId);
+                                logger.info(`Filled insurance ID: ${insuranceId}`);
+                                await this.delay(500);
+                                break;
+                            }
+                        }
+                    } catch (e) {
+                        logger.warn('Could not fill insurance ID:', e.message);
+                    }
+                }
+
+                // Fill Responsible Party (typically defaults to "Self")
+                try {
+                    const responsiblePartySelects = await this.page.$$('select');
+                    for (const select of responsiblePartySelects) {
+                        const id = await select.getAttribute('id');
+                        const name = await select.getAttribute('name');
+
+                        if ((name && name.toLowerCase().includes('relationship')) ||
+                            (id && id.toLowerCase().includes('relationship'))) {
+                            try {
+                                await select.selectOption({ label: 'Self' });
+                                logger.info('Selected responsible party: Self');
+                            } catch (e) {
+                                // Try index 1 if "Self" not found
+                                try {
+                                    await select.selectOption({ index: 1 });
+                                    logger.debug('Selected responsible party by index');
+                                } catch (e2) {
+                                    logger.warn('Could not select responsible party');
+                                }
+                            }
+                            break;
+                        }
+                    }
+                } catch (e) {
+                    logger.warn('Could not fill responsible party:', e.message);
                 }
             }
 
-            await this.takeScreenshot('05-patient-info');
+            await this.takeScreenshot('05-patient-info-filled');
             logger.info('Patient information filled');
+
+            // Click the Confirm button to proceed to next step
+            logger.info('Clicking Confirm to proceed to order form...');
+            const confirmButtonSelectors = [
+                'button:has-text("Confirm")',
+                'button:has-text("Save & Create Order")',
+                'button:has-text("Continue")',
+                'button:has-text("Next")',
+                'button[type="button"]:has-text("Confirm")',
+                '.btn-primary:has-text("Confirm")'
+            ];
+
+            let confirmButton = null;
+            for (const selector of confirmButtonSelectors) {
+                try {
+                    confirmButton = await this.page.$(selector);
+                    if (confirmButton) {
+                        const isVisible = await confirmButton.isVisible();
+                        if (isVisible) {
+                            logger.debug(`Found confirm button: ${selector}`);
+                            break;
+                        }
+                    }
+                } catch (e) {
+                    continue;
+                }
+            }
+
+            if (confirmButton) {
+                await confirmButton.click();
+                logger.info('Clicked Confirm button');
+
+                // Wait for validation
+                await this.delay(3000);
+
+                // Dismiss any popups that might appear
+                await this.dismissPopups();
+
+                await this.takeScreenshot('06-after-confirm');
+
+                // Check for address validation dialog or confirmation button
+                // If address validation appears, we may need to click Confirm again
+                const secondConfirmSelectors = [
+                    'button:has-text("Confirm")',
+                    'button:has-text("Yes")',
+                    'button:has-text("Continue")',
+                    'button:has-text("Accept")'
+                ];
+
+                logger.info('Checking for address validation confirmation...');
+                let secondConfirmButton = null;
+                for (const selector of secondConfirmSelectors) {
+                    try {
+                        secondConfirmButton = await this.page.$(selector);
+                        if (secondConfirmButton) {
+                            const isVisible = await secondConfirmButton.isVisible();
+                            if (isVisible) {
+                                logger.info(`Found address confirmation button: ${selector}`);
+                                await secondConfirmButton.click();
+                                logger.info('Clicked address confirmation button');
+                                await this.delay(2000);
+                                await this.dismissPopups();
+                                await this.takeScreenshot('06b-after-second-confirm');
+                                break;
+                            }
+                        }
+                    } catch (e) {
+                        continue;
+                    }
+                }
+
+                // Check if there are validation errors visible
+                const validationErrors = await this.page.$$('text=/Address entered is not a valid address/i');
+                if (validationErrors && validationErrors.length > 0) {
+                    logger.warn(`Found ${validationErrors.length} address validation errors - form may not proceed`);
+                    logger.warn('Attempting to proceed anyway...');
+                }
+
+                // Now click "Save & Create Order" to proceed to Order Details page
+                logger.info('Looking for Save & Create Order button...');
+                const saveAndCreateSelectors = [
+                    'button:has-text("Save & Create Order")',
+                    'button:has-text("Save and Create Order")',
+                    'button:has-text("Create Order")',
+                    '.btn-primary:has-text("Save")',
+                    'button[type="button"]:has-text("Save & Create")'
+                ];
+
+                let saveButton = null;
+                for (const selector of saveAndCreateSelectors) {
+                    try {
+                        saveButton = await this.page.$(selector);
+                        if (saveButton) {
+                            const isVisible = await saveButton.isVisible();
+                            const isEnabled = await saveButton.isEnabled();
+                            if (isVisible && isEnabled) {
+                                logger.debug(`Found Save & Create Order button: ${selector} (enabled: ${isEnabled})`);
+                                break;
+                            } else if (isVisible && !isEnabled) {
+                                logger.warn(`Save & Create Order button is disabled - validation errors may exist`);
+                                saveButton = null; // Don't try to click disabled button
+                            }
+                        }
+                    } catch (e) {
+                        continue;
+                    }
+                }
+
+                if (saveButton) {
+                    await saveButton.click();
+                    logger.info('Clicked Save & Create Order button');
+
+                    // Wait for Order Details page to load
+                    await this.page.waitForLoadState('networkidle');
+                    await this.delay(3000);
+
+                    // Dismiss any popups
+                    await this.dismissPopups();
+
+                    await this.takeScreenshot('07-order-details-page');
+                    logger.info('Now on Order Details page');
+                } else {
+                    logger.warn('Could not find enabled Save & Create Order button - form validation may have failed');
+                    logger.warn('Check screenshot 06-after-confirm to see validation errors');
+                }
+            } else {
+                logger.warn('Could not find Confirm button - may need to manually proceed');
+            }
 
             return true;
         } catch (error) {
@@ -594,8 +1299,23 @@ class LabcorpAgent {
             logger.info(`Selecting ${tests.length} tests...`);
             this.emitStatus(`Adding ${tests.length} lab tests...`);
 
-            // Find test search/selection field
+            // First, check if we're on the Patient Details page and need to click "Create New Order"
+            const createNewOrderButton = await this.page.$('button:has-text("Create New Order")');
+            if (createNewOrderButton) {
+                logger.info('Found "Create New Order" button - clicking to navigate to Order Details page...');
+                await createNewOrderButton.click();
+                await this.page.waitForLoadState('networkidle');
+                await this.delay(2000);
+                await this.dismissPopups();
+                await this.takeScreenshot('08-after-create-new-order');
+                logger.info('Navigated to Order Details page');
+            }
+
+            // Find test search/selection field - updated based on actual UI
             const testSelectors = [
+                'input[placeholder*="Enter Test Number or Test Name"]',
+                'input[placeholder*="Test Number"]',
+                'input[placeholder*="Test Name"]',
                 'input[placeholder*="test"]',
                 'input[placeholder*="Test"]',
                 'input[aria-label*="test"]',
@@ -605,10 +1325,18 @@ class LabcorpAgent {
             let testField = null;
             for (const selector of testSelectors) {
                 testField = await this.page.$(selector);
-                if (testField) break;
+                if (testField) {
+                    logger.debug(`Found test field: ${selector}`);
+                    break;
+                }
             }
 
             if (!testField) {
+                // Log current URL and page title for debugging
+                const currentUrl = this.page.url();
+                const pageTitle = await this.page.title();
+                logger.error(`Could not find test selection field. Current URL: ${currentUrl}, Title: ${pageTitle}`);
+                await this.takeScreenshot('error-no-test-field');
                 throw new Error('Could not find test selection field');
             }
 
@@ -653,8 +1381,10 @@ class LabcorpAgent {
             logger.info(`Adding ${codes.length} diagnosis codes...`);
             this.emitStatus('Adding diagnosis codes...');
 
-            // Find diagnosis field
+            // Find diagnosis field - updated based on actual UI
             const diagnosisSelectors = [
+                'input[placeholder*="Find by Diagnosis Code or Name"]',
+                'input[placeholder*="Diagnosis Code"]',
                 'input[placeholder*="diagnosis"]',
                 'input[placeholder*="ICD"]',
                 'input[name*="diagnosis"]',
@@ -679,6 +1409,61 @@ class LabcorpAgent {
         } catch (error) {
             logger.error('Failed to add diagnosis codes:', error);
             throw error;
+        }
+    }
+
+    /**
+     * Validate order before submission
+     */
+    async validateOrder() {
+        try {
+            logger.info('Validating order...');
+            this.emitStatus('Validating order details...');
+
+            // Look for Validate button
+            const validateSelectors = [
+                'button:has-text("Validate")',
+                'button[type="button"]:has-text("Validate")',
+                '[aria-label*="Validate"]',
+                'button.btn-primary:has-text("Validate")'
+            ];
+
+            let validateButton = null;
+            for (const selector of validateSelectors) {
+                validateButton = await this.page.$(selector);
+                if (validateButton) {
+                    logger.debug(`Found validate button: ${selector}`);
+                    break;
+                }
+            }
+
+            if (!validateButton) {
+                logger.warn('Could not find Validate button, proceeding without validation');
+                return false;
+            }
+
+            // Click validate
+            await validateButton.click();
+            logger.info('Clicked Validate button');
+
+            // Wait for validation to complete
+            await this.page.waitForLoadState('networkidle');
+            await this.delay(3000);
+
+            // Check for validation errors
+            const errorElement = await this.page.$('.error, .alert-danger, [role="alert"]');
+            if (errorElement) {
+                const errorText = await errorElement.textContent();
+                logger.warn(`Validation warning/error: ${errorText}`);
+            }
+
+            // Take screenshot after validation
+            await this.takeScreenshot('06-order-validated');
+
+            return true;
+        } catch (error) {
+            logger.error('Failed to validate order:', error);
+            return false;
         }
     }
 
@@ -890,6 +1675,26 @@ class LabcorpAgent {
                 errorMessage: error.message,
                 durationMs: Date.now() - startTime
             });
+
+            // Send email notification to CMO with all order details
+            try {
+                logger.info('Sending failure notification email to CMO...');
+
+                await emailNotificationService.sendAutomationFailureNotification({
+                    providerName: orderData.providerName || 'Unknown Provider',
+                    patientData: orderData.patient,
+                    tests: orderData.tests,
+                    diagnoses: orderData.diagnosisCodes || [],
+                    errorMessage: error.message,
+                    screenshotUrl: orderData.lastScreenshot || null,
+                    timestamp: new Date().toLocaleString()
+                });
+
+                logger.info('✅ Failure notification email sent to CMO');
+            } catch (emailError) {
+                logger.error('Failed to send failure notification email:', emailError);
+                // Don't throw - we already have the main error
+            }
 
             throw error;
         } finally {

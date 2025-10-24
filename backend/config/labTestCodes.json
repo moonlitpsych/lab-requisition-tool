@@ -1,0 +1,219 @@
+{
+  "labcorp": {
+    "commonTests": [
+      {
+        "code": "322000",
+        "name": "Comprehensive Metabolic Panel (14)",
+        "category": "Chemistry"
+      },
+      {
+        "code": "007600",
+        "name": "Complete Blood Count (CBC) With Differential",
+        "category": "Hematology"
+      },
+      {
+        "code": "330015",
+        "name": "Thyroid Cascade (TSH w/ Reflex to T3/T4)",
+        "category": "Endocrine",
+        "description": "TSH with automatic reflex testing to Free T3 and Free T4 if abnormal"
+      },
+      {
+        "code": "007573",
+        "name": "Lipid Panel",
+        "category": "Cardiovascular"
+      },
+      {
+        "code": "001453",
+        "name": "Hemoglobin A1c",
+        "category": "Diabetes"
+      },
+      {
+        "code": "011776",
+        "name": "Lithium",
+        "category": "Drug Monitoring"
+      },
+      {
+        "code": "004483",
+        "name": "Valproic Acid",
+        "category": "Drug Monitoring"
+      },
+      {
+        "code": "004465",
+        "name": "Prolactin",
+        "category": "Endocrine"
+      },
+      {
+        "code": "017306",
+        "name": "Vitamin D, 25-Hydroxy",
+        "category": "Vitamin"
+      },
+      {
+        "code": "007065",
+        "name": "Vitamin B12 and Folate",
+        "category": "Vitamin",
+        "description": "Combined test for Vitamin B12 and Folate levels"
+      },
+      {
+        "code": "039092",
+        "name": "Clozapine and Metabolites",
+        "category": "Drug Monitoring",
+        "description": "Clozapine, Norclozapine (N-Desmethyl Clozapine)"
+      },
+      {
+        "code": "007150",
+        "name": "Thiamine (Vitamin B1)",
+        "category": "Vitamin",
+        "description": "Thiamine level - important for patients with alcohol use disorder"
+      },
+      {
+        "code": "004598",
+        "name": "Ferritin",
+        "category": "Iron Studies"
+      },
+      {
+        "code": "007788",
+        "name": "Urinalysis, Complete",
+        "category": "Urinalysis"
+      },
+      {
+        "code": "790500",
+        "name": "Urine Drug Screen",
+        "category": "Toxicology"
+      },
+      {
+        "code": "006620",
+        "name": "Pregnancy Test (hCG)",
+        "category": "Pregnancy"
+      },
+      {
+        "code": "006947",
+        "name": "C-Reactive Protein",
+        "category": "Inflammation"
+      },
+      {
+        "code": "004439",
+        "name": "T3, Free",
+        "category": "Thyroid"
+      },
+      {
+        "code": "004556",
+        "name": "T4, Free",
+        "category": "Thyroid"
+      },
+      {
+        "code": "004449",
+        "name": "Lamotrigine",
+        "category": "Drug Monitoring"
+      },
+      {
+        "code": "004501",
+        "name": "Carbamazepine",
+        "category": "Drug Monitoring"
+      },
+      {
+        "code": "008344",
+        "name": "Hepatic Function Panel",
+        "category": "Liver"
+      },
+      {
+        "code": "140435",
+        "name": "HIV-1/2 Antigen and Antibodies",
+        "category": "Infectious Disease"
+      },
+      {
+        "code": "008472",
+        "name": "Hepatitis B Surface Antigen",
+        "category": "Infectious Disease"
+      },
+      {
+        "code": "006514",
+        "name": "Hepatitis C Antibody",
+        "category": "Infectious Disease"
+      }
+    ]
+  },
+  "icd10": {
+    "psychiatryDiagnoses": [
+      {
+        "code": "F31.30",
+        "description": "Bipolar disorder, current episode depressed, mild or moderate severity, unspecified"
+      },
+      {
+        "code": "F32.9",
+        "description": "Major depressive disorder, single episode, unspecified"
+      },
+      {
+        "code": "F33.1",
+        "description": "Major depressive disorder, recurrent, moderate"
+      },
+      {
+        "code": "F41.1",
+        "description": "Generalized anxiety disorder"
+      },
+      {
+        "code": "F43.10",
+        "description": "Post-traumatic stress disorder, unspecified"
+      },
+      {
+        "code": "F90.2",
+        "description": "Attention-deficit hyperactivity disorder, combined type"
+      },
+      {
+        "code": "Z79.899",
+        "description": "Other long term (current) drug therapy"
+      },
+      {
+        "code": "Z51.81",
+        "description": "Encounter for therapeutic drug level monitoring"
+      },
+      {
+        "code": "R06.4",
+        "description": "Hyperventilation"
+      },
+      {
+        "code": "G47.00",
+        "description": "Insomnia, unspecified"
+      },
+      {
+        "code": "Z13.1",
+        "description": "Encounter for screening for diabetes mellitus"
+      },
+      {
+        "code": "E03.9",
+        "description": "Hypothyroidism, unspecified"
+      },
+      {
+        "code": "E78.5",
+        "description": "Hyperlipidemia, unspecified"
+      },
+      {
+        "code": "E66.9",
+        "description": "Obesity, unspecified"
+      },
+      {
+        "code": "Z00.00",
+        "description": "Encounter for general adult medical examination without abnormal findings"
+      },
+      {
+        "code": "N92.6",
+        "description": "Irregular menstruation, unspecified"
+      },
+      {
+        "code": "F20.9",
+        "description": "Schizophrenia, unspecified"
+      },
+      {
+        "code": "F25.9",
+        "description": "Schizoaffective disorder, unspecified"
+      },
+      {
+        "code": "F60.3",
+        "description": "Borderline personality disorder"
+      },
+      {
+        "code": "F10.20",
+        "description": "Alcohol use disorder, mild"
+      }
+    ]
+  }
+}
