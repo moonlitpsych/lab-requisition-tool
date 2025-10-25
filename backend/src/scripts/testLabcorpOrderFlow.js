@@ -88,17 +88,24 @@ async function runTest() {
         const previewPath = await agent.previewOrder();
         console.log(`    ✅ Preview saved: ${previewPath}\n`);
 
-        const result = {
-            success: true,
-            status: 'preview',
-            message: 'Order preview completed successfully (dry-run mode)'
-        };
+        // Step 9: Submit order
+        console.log('9️⃣  Submitting order to Labcorp...');
+        const result = await agent.submitOrder();
+        if (result.success) {
+            console.log(`    ✅ Order submitted!`);
+            if (result.confirmationNumber) {
+                console.log(`    📋 Confirmation: ${result.confirmationNumber}`);
+            }
+        } else {
+            console.log(`    ❌ Submission failed`);
+        }
+        console.log('');
 
         console.log('\n===================================');
         if (result.success) {
             console.log('✅ ORDER SUBMITTED SUCCESSFULLY!');
-            if (result.requisitionNumber) {
-                console.log(`📋 Requisition: ${result.requisitionNumber}`);
+            if (result.confirmationNumber) {
+                console.log(`📋 Confirmation Number: ${result.confirmationNumber}`);
             }
         } else {
             console.log('❌ Order submission failed');

@@ -1292,6 +1292,166 @@ class LabcorpAgent {
     }
 
     /**
+     * Select provider (required field)
+     */
+    async selectProvider(providerName) {
+        try {
+            logger.info('Selecting provider...');
+            this.emitStatus('Selecting ordering provider...');
+
+            // Find provider dropdown - it's usually a button/dropdown combo
+            const providerSelectors = [
+                'button:has-text("Select A Provider")',
+                'div:has-text("Select A Provider") >> button',
+                '[aria-label*="provider"] >> button',
+                'button[aria-haspopup="listbox"]',
+                'select:has-text("Select A Provider")',
+                'select[id*="provider"]',
+                'select[name*="provider"]'
+            ];
+
+            let providerDropdown = null;
+            for (const selector of providerSelectors) {
+                try {
+                    providerDropdown = await this.page.$(selector);
+                    if (providerDropdown) {
+                        logger.debug(`Found provider dropdown: ${selector}`);
+                        break;
+                    }
+                } catch (e) {
+                    // Some selectors might fail, continue to next
+                    continue;
+                }
+            }
+
+            if (!providerDropdown) {
+                logger.warn('Could not find provider dropdown with standard selectors');
+                // Try a more specific search for the Provider Information section
+                const providerSection = await this.page.$('text="Provider Information"');
+                if (providerSection) {
+                    // Look for any button in that section
+                    providerDropdown = await this.page.$('text="Provider Information" >> .. >> button');
+                    if (providerDropdown) {
+                        logger.debug('Found provider dropdown in Provider Information section');
+                    }
+                }
+
+                if (!providerDropdown) {
+                    logger.warn('Could not find provider dropdown - may already be selected or missing');
+                    return true;
+                }
+            }
+
+            // Try to select first available provider
+            const tagName = await providerDropdown.evaluate(el => el.tagName.toLowerCase());
+
+            if (tagName === 'select') {
+                // It's a regular select dropdown
+                const options = await providerDropdown.$$('option');
+                if (options.length > 1) {
+                    // Select the first real provider (skip the placeholder at index 0)
+                    await providerDropdown.selectOption({ index: 1 });
+                    logger.info('Selected first available provider from select');
+                    await this.delay(1000);
+                } else {
+                    logger.warn('No provider options available in dropdown');
+                }
+            } else if (tagName === 'button') {
+                // It's a custom dropdown button - click to open
+                await providerDropdown.click();
+                await this.delay(1500);
+
+                // Check if it opened a search form instead of a dropdown
+                // Look for the NPI field in the Provider Information section
+                const npiField = await this.page.$('text="Provider\'s NPI" >> .. >> input, input[id*="npi"], input[name*="npi"], label:has-text("NPI") >> .. >> input');
+                if (npiField) {
+                    // It's a provider search form - use NPI to search
+                    logger.info('Found provider search form - searching by NPI');
+
+                    // Use the provider NPI from config or a default
+                    // Type 1 (individual provider) NPI required, not Type 2 (organization)
+                    const providerNPI = providerName || '1023711348'; // Dr. Sweeney's NPI
+
+                    await npiField.fill(providerNPI);
+                    await this.delay(500);
+
+                    // Click the Search button
+                    const searchButton = await this.page.$('button:has-text("Search")');
+                    if (searchButton) {
+                        await searchButton.click();
+                        logger.info('Clicked Search button for provider');
+
+                        // Wait for the fields to auto-populate (no need to click anything)
+                        await this.delay(3000);
+                        logger.info('Waiting for provider fields to auto-populate from NPI search');
+
+                        // Check if Last Name field got populated
+                        const lastNameField = await this.page.$('input[name*="lastName"], input[id*="lastName"], label:has-text("Last Name") >> .. >> input');
+                        if (lastNameField) {
+                            const lastNameValue = await lastNameField.inputValue();
+                            if (lastNameValue && lastNameValue.length > 0) {
+                                logger.info(`Provider fields auto-populated successfully. Last Name: ${lastNameValue}`);
+                            } else {
+                                logger.warn('Last Name field still empty after search - NPI may not have returned results');
+                            }
+                        }
+
+                        // Now click Confirm/Add Provider to finalize
+                        const confirmButton = await this.page.$('button:has-text("Confirm/Add Provider"), button:has-text("Confirm"), button:has-text("Add Provider")');
+                        if (confirmButton) {
+                            await confirmButton.click();
+                            logger.info('Clicked Confirm/Add Provider button to finalize');
+                            await this.delay(2000);
+                        } else {
+                            logger.warn('Could not find Confirm/Add Provider button');
+                            await this.takeScreenshot('provider-no-confirm-button');
+                        }
+                    } else {
+                        logger.warn('Could not find Search button');
+                    }
+                } else {
+                    // Look for provider options in dropdown
+                    const optionSelectors = [
+                        'li[role="option"]',
+                        'div[role="option"]',
+                        '[data-value]',
+                        'li.dropdown-item',
+                        'div.dropdown-item'
+                    ];
+
+                    let options = [];
+                    for (const selector of optionSelectors) {
+                        options = await this.page.$$(selector);
+                        if (options.length > 0) {
+                            logger.debug(`Found ${options.length} provider options with selector: ${selector}`);
+                            break;
+                        }
+                    }
+
+                    if (options.length > 0) {
+                        // Click the first option (should be first real provider)
+                        await options[0].click();
+                        logger.info('Selected first available provider from custom dropdown');
+                        await this.delay(1000);
+                    } else {
+                        logger.warn('Opened provider dropdown but could not find options or search form');
+                        await this.takeScreenshot('error-provider-dropdown-open');
+                    }
+                }
+            } else {
+                logger.warn(`Unexpected provider element type: ${tagName}`);
+            }
+
+            await this.takeScreenshot('05a-provider-selected');
+            return true;
+        } catch (error) {
+            logger.error('Failed to select provider:', error);
+            // Don't throw - this is not critical enough to stop the whole flow
+            return false;
+        }
+    }
+
+    /**
      * Select lab tests
      */
     async selectTests(tests) {
@@ -1310,6 +1470,9 @@ class LabcorpAgent {
                 await this.takeScreenshot('08-after-create-new-order');
                 logger.info('Navigated to Order Details page');
             }
+
+            // Select provider first (required field)
+            await this.selectProvider();
 
             // Find test search/selection field - updated based on actual UI
             const testSelectors = [
@@ -1394,17 +1557,49 @@ class LabcorpAgent {
             let diagnosisField = null;
             for (const selector of diagnosisSelectors) {
                 diagnosisField = await this.page.$(selector);
-                if (diagnosisField) break;
+                if (diagnosisField) {
+                    logger.debug(`Found diagnosis field: ${selector}`);
+                    break;
+                }
             }
 
-            if (diagnosisField) {
-                const diagnosisString = codes.join(', ');
-                await diagnosisField.fill(diagnosisString);
-                logger.info(`Added diagnosis codes: ${diagnosisString}`);
-            } else {
+            if (!diagnosisField) {
                 logger.warn('Could not find diagnosis field - skipping');
+                return true;
             }
 
+            // Enter each diagnosis code separately (one at a time)
+            for (let i = 0; i < codes.length; i++) {
+                const code = codes[i];
+
+                // Clear the field and enter the code
+                await diagnosisField.fill(code);
+                await this.delay(1000);
+
+                // Look for autocomplete suggestion or press Enter
+                const suggestion = await this.page.$(`text="${code}"`);
+                if (suggestion) {
+                    await suggestion.click();
+                    logger.debug(`Selected diagnosis code from dropdown: ${code}`);
+                } else {
+                    await this.page.keyboard.press('Enter');
+                    logger.debug(`Entered diagnosis code: ${code}`);
+                }
+
+                await this.delay(500);
+
+                // If there are more codes, find the field again (it might have changed)
+                if (i < codes.length - 1) {
+                    await this.delay(500);
+                    diagnosisField = await this.page.$(diagnosisSelectors[0]);
+                    if (!diagnosisField) {
+                        logger.warn(`Could not find diagnosis field for code ${i + 2}`);
+                        break;
+                    }
+                }
+            }
+
+            logger.info(`Added diagnosis codes: ${codes.join(', ')}`);
             return true;
         } catch (error) {
             logger.error('Failed to add diagnosis codes:', error);
@@ -1419,6 +1614,25 @@ class LabcorpAgent {
         try {
             logger.info('Validating order...');
             this.emitStatus('Validating order details...');
+
+            // First, handle the Workmans Comp dropdown (if present)
+            const workmansCompSelectors = [
+                'select:has-text("Workmans Comp")',
+                'label:has-text("Workmans Comp") >> .. >> select',
+                'select[id*="workman"], select[id*="comp"]',
+                'div:has-text("Workmans Comp") >> select'
+            ];
+
+            for (const selector of workmansCompSelectors) {
+                const workmansCompDropdown = await this.page.$(selector);
+                if (workmansCompDropdown) {
+                    logger.info('Found Workmans Comp dropdown, selecting "No"');
+                    await workmansCompDropdown.selectOption({ label: 'No' });
+                    await this.delay(500);
+                    logger.debug('Selected "No" for Workmans Comp');
+                    break;
+                }
+            }
 
             // Look for Validate button
             const validateSelectors = [
@@ -1479,10 +1693,14 @@ class LabcorpAgent {
 
             const screenshotPath = await this.takeScreenshot('order-preview', true);
 
-            // Update order status to preview
-            await updateOrderStatus(this.orderId, 'preview', {
-                preview_screenshot_url: screenshotPath
-            });
+            // Update order status to preview (if Supabase is available)
+            try {
+                await updateOrderStatus(this.orderId, 'preview', {
+                    preview_screenshot_url: screenshotPath
+                });
+            } catch (dbError) {
+                logger.warn('Could not update order status (Supabase not available):', dbError.message);
+            }
 
             logger.info('Order preview generated');
             this.emitStatus('Preview ready - awaiting confirmation');
@@ -1504,6 +1722,7 @@ class LabcorpAgent {
 
             // Find submit button
             const submitSelectors = [
+                'button:has-text("Create Order")',
                 'button:has-text("Submit")',
                 'button:has-text("Place Order")',
                 'button:has-text("Send Order")',
@@ -1535,11 +1754,16 @@ class LabcorpAgent {
 
                 const finalScreenshot = await this.takeScreenshot('order-confirmation', true);
 
-                await updateOrderStatus(this.orderId, 'completed', {
-                    confirmation_number: confirmationNumber,
-                    final_screenshot_url: finalScreenshot,
-                    submitted_at: new Date().toISOString()
-                });
+                // Update order status (if Supabase is available)
+                try {
+                    await updateOrderStatus(this.orderId, 'completed', {
+                        confirmation_number: confirmationNumber,
+                        final_screenshot_url: finalScreenshot,
+                        submitted_at: new Date().toISOString()
+                    });
+                } catch (dbError) {
+                    logger.warn('Could not update order status (Supabase not available):', dbError.message);
+                }
 
                 this.emitStatus(`Order submitted - Confirmation: ${confirmationNumber}`);
 

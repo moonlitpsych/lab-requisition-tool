@@ -68,6 +68,12 @@ const SmartLabOrder: React.FC = () => {
     const [selectedTests, setSelectedTests] = useState<LabTest[]>([]);
     const [selectedDiagnoses, setSelectedDiagnoses] = useState<string[]>([]);
 
+    // Search for tests and diagnoses (fuzzy search)
+    const [testSearch, setTestSearch] = useState<string>('');
+    const [diagnosisSearch, setDiagnosisSearch] = useState<string>('');
+    const [filteredTests, setFilteredTests] = useState<LabTest[]>([]);
+    const [filteredDiagnoses, setFilteredDiagnoses] = useState<Diagnosis[]>([]);
+
     // Order submission
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
     const [orderStatus, setOrderStatus] = useState<OrderStatus | null>(null);
@@ -175,21 +181,72 @@ const SmartLabOrder: React.FC = () => {
         }
     };
 
-    const handleToggleTest = (test: LabTest) => {
-        const isSelected = selectedTests.find(t => t.code === test.code);
-        if (isSelected) {
-            setSelectedTests(selectedTests.filter(t => t.code !== test.code));
-        } else {
-            setSelectedTests([...selectedTests, test]);
+    // Fuzzy search filter for tests
+    const filterTests = (searchTerm: string) => {
+        if (!searchTerm.trim()) {
+            setFilteredTests([]);
+            return;
         }
+
+        const term = searchTerm.toLowerCase();
+        const results = availableTests.filter(test =>
+            test.name.toLowerCase().includes(term) ||
+            test.code.toLowerCase().includes(term) ||
+            (test.description && test.description.toLowerCase().includes(term))
+        ).slice(0, 10); // Limit to 10 results
+
+        setFilteredTests(results);
     };
 
-    const handleToggleDiagnosis = (diagnosisCode: string) => {
-        if (selectedDiagnoses.includes(diagnosisCode)) {
-            setSelectedDiagnoses(selectedDiagnoses.filter(d => d !== diagnosisCode));
-        } else {
-            setSelectedDiagnoses([...selectedDiagnoses, diagnosisCode]);
+    // Fuzzy search filter for diagnoses
+    const filterDiagnoses = (searchTerm: string) => {
+        if (!searchTerm.trim()) {
+            setFilteredDiagnoses([]);
+            return;
         }
+
+        const term = searchTerm.toLowerCase();
+        const results = availableDiagnoses.filter(diagnosis =>
+            diagnosis.code.toLowerCase().includes(term) ||
+            diagnosis.description.toLowerCase().includes(term)
+        ).slice(0, 10); // Limit to 10 results
+
+        setFilteredDiagnoses(results);
+    };
+
+    const handleTestSearchChange = (value: string) => {
+        setTestSearch(value);
+        filterTests(value);
+    };
+
+    const handleDiagnosisSearchChange = (value: string) => {
+        setDiagnosisSearch(value);
+        filterDiagnoses(value);
+    };
+
+    const handleAddTest = (test: LabTest) => {
+        const isSelected = selectedTests.find(t => t.code === test.code);
+        if (!isSelected) {
+            setSelectedTests([...selectedTests, test]);
+        }
+        setTestSearch(''); // Clear search after adding
+        setFilteredTests([]);
+    };
+
+    const handleRemoveTest = (testCode: string) => {
+        setSelectedTests(selectedTests.filter(t => t.code !== testCode));
+    };
+
+    const handleAddDiagnosis = (diagnosis: Diagnosis) => {
+        if (!selectedDiagnoses.includes(diagnosis.code)) {
+            setSelectedDiagnoses([...selectedDiagnoses, diagnosis.code]);
+        }
+        setDiagnosisSearch(''); // Clear search after adding
+        setFilteredDiagnoses([]);
+    };
+
+    const handleRemoveDiagnosis = (diagnosisCode: string) => {
+        setSelectedDiagnoses(selectedDiagnoses.filter(d => d !== diagnosisCode));
     };
 
     const handleReviewOrder = () => {
@@ -318,26 +375,35 @@ const SmartLabOrder: React.FC = () => {
                         <div className="search-section">
                             <div className="form-group">
                                 <label>Patient Name *</label>
-                                <input
-                                    type="text"
-                                    value={searchName}
-                                    onChange={(e) => setSearchName(e.target.value)}
-                                    onKeyPress={(e) => e.key === 'Enter' && handleSearchPatients()}
-                                    placeholder="Enter patient first or last name"
-                                    style={{ fontSize: '1rem', padding: '0.75rem' }}
-                                />
-                                <small style={{ color: '#6b7280', marginTop: '0.25rem', display: 'block' }}>
-                                    Searches both first and last names
-                                </small>
+                                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-end' }}>
+                                    <div style={{ flex: 1 }}>
+                                        <input
+                                            type="text"
+                                            value={searchName}
+                                            onChange={(e) => setSearchName(e.target.value)}
+                                            onKeyPress={(e) => e.key === 'Enter' && handleSearchPatients()}
+                                            placeholder="Enter patient first or last name"
+                                            style={{ fontSize: '1rem', padding: '0.75rem', width: '100%' }}
+                                        />
+                                        <small style={{ color: '#6b7280', marginTop: '0.25rem', display: 'block' }}>
+                                            Searches both first and last names
+                                        </small>
+                                    </div>
+                                    <button
+                                        className="btn btn-primary"
+                                        onClick={handleSearchPatients}
+                                        disabled={isSearching || !searchName.trim()}
+                                        style={{
+                                            fontSize: '1rem',
+                                            padding: '0.75rem 1.5rem',
+                                            height: '3rem',
+                                            whiteSpace: 'nowrap'
+                                        }}
+                                    >
+                                        {isSearching ? 'Searching...' : 'Search'}
+                                    </button>
+                                </div>
                             </div>
-
-                            <button
-                                className="btn btn-primary"
-                                onClick={handleSearchPatients}
-                                disabled={isSearching || !searchName.trim()}
-                            >
-                                {isSearching ? 'Searching...' : 'Search Patients'}
-                            </button>
                         </div>
 
                         {searchResults.length > 0 && (
