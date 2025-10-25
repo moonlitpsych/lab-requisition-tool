@@ -249,6 +249,24 @@ const SmartLabOrder: React.FC = () => {
         setSelectedDiagnoses(selectedDiagnoses.filter(d => d !== diagnosisCode));
     };
 
+    // Toggle functions for checkbox lists (legacy UI, will be replaced)
+    const handleToggleTest = (test: LabTest) => {
+        const isSelected = selectedTests.find(t => t.code === test.code);
+        if (isSelected) {
+            setSelectedTests(selectedTests.filter(t => t.code !== test.code));
+        } else {
+            setSelectedTests([...selectedTests, test]);
+        }
+    };
+
+    const handleToggleDiagnosis = (diagnosisCode: string) => {
+        if (selectedDiagnoses.includes(diagnosisCode)) {
+            setSelectedDiagnoses(selectedDiagnoses.filter(d => d !== diagnosisCode));
+        } else {
+            setSelectedDiagnoses([...selectedDiagnoses, diagnosisCode]);
+        }
+    };
+
     const handleReviewOrder = () => {
         if (selectedTests.length === 0) {
             alert('Please select at least one test');
