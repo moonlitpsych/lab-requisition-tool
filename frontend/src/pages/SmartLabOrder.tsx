@@ -7,7 +7,9 @@ import axios from 'axios';
 import { io, Socket } from 'socket.io-client';
 import './SmartLabOrder.css';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+// In production, use relative URLs (same domain). In development, use localhost:3001
+const API_URL = process.env.REACT_APP_API_URL ||
+    (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3001');
 
 interface Patient {
     intakeqId: string;
