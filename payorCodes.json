@@ -1,0 +1,38 @@
+{
+    "description": "Labcorp Payor Code Database for Utah",
+    "lastUpdated": "2025-10-23",
+    "usage": "This file maps insurance providers to Labcorp payor codes. Use getPayorCode() from insuranceHelper.js to access.",
+    "codes": {
+        "Medicaid": {
+            "Utah Medicaid": "UT",
+            "Healthy U (UUHP)": "UT",
+            "Molina Healthcare of Utah": "UT",
+            "Select Health Community Care": "UT",
+            "Health Choice Utah (Anthem)": "UT",
+            "Targeted Adult Medicaid": "UT"
+        },
+        "Medicare": {
+            "Medicare": "05"
+        },
+        "Commercial": {
+            "Select Health": "NEEDS_LOOKUP",
+            "Regence BlueCross BlueShield of Utah": "NEEDS_LOOKUP",
+            "University of Utah Health Plans": "NEEDS_LOOKUP",
+            "EMI Health": "NEEDS_LOOKUP",
+            "Cigna": "NEEDS_LOOKUP",
+            "Aetna": "NEEDS_LOOKUP",
+            "United Healthcare": "NEEDS_LOOKUP"
+        }
+    },
+    "notes": {
+        "medicaid": "All Utah Medicaid plans (both MCO and FFS) use payor code 'UT' per Labcorp documentation",
+        "medicare": "Medicare uses payor code '05' and is not editable in Labcorp Link",
+        "commercial": "Commercial plans require lookup using 'Payor Name Lookup' feature in Labcorp Link",
+        "billing": "For MCO Medicaid, may need to select 'Private Insurance' bill method instead of 'Medicaid'"
+    },
+    "instructions": {
+        "whenUnknown": "If payor code is null, the automation will use Payor Name Lookup feature automatically",
+        "addNewCode": "After looking up a code, add it to PAYOR_CODES in insuranceHelper.js for future use",
+        "verification": "Always verify payor codes in Labcorp Link portal for accuracy"
+    }
+}

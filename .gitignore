@@ -77,3 +77,4 @@ sessions/
 *.sql
 *.sqlite
 *.db
+old-static-files/

@@ -61,8 +61,9 @@ app.use('/screenshots', express.static(path.join(__dirname, '../test-screenshots
 
 // Serve frontend static files in production
 if (process.env.NODE_ENV === 'production') {
-    // Serve static files from React build
-    app.use(express.static(path.join(__dirname, '../../frontend/build')));
+    const frontendBuildPath = path.join(__dirname, '../../frontend/build');
+    logger.info(`Serving frontend static files from: ${frontendBuildPath}`);
+    app.use(express.static(frontendBuildPath));
 }
 
 // Health check endpoint
