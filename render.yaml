@@ -1,0 +1,52 @@
+services:
+  # Web service that serves both frontend and backend
+  - type: web
+    name: moonlit-lab-portal
+    env: node
+    region: oregon  # Change to your preferred region
+    plan: free  # Change to 'starter' for $7/month (no sleep, better performance)
+    buildCommand: npm run build:all
+    startCommand: npm run start:prod
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: HEADLESS_MODE
+        value: true
+      # Labcorp credentials (add these in Render dashboard)
+      - key: LABCORP_USERNAME
+        sync: false
+      - key: LABCORP_PASSWORD
+        sync: false
+      # IntakeQ API (add in Render dashboard)
+      - key: INTAKEQ_API_KEY
+        sync: false
+      # Office Ally (Medicaid eligibility)
+      - key: OFFICE_ALLY_USERNAME
+        sync: false
+      - key: OFFICE_ALLY_PASSWORD
+        sync: false
+      - key: OFFICE_ALLY_SENDER_ID
+        sync: false
+      - key: OFFICE_ALLY_PROVIDER_NPI
+        sync: false
+      # Google Gemini for LLM (optional)
+      - key: GEMINI_API_KEY
+        sync: false
+      # Supabase (optional)
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      # Email notifications (optional)
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: 587
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: NOTIFICATION_EMAIL
+        value: hello@trymoonlit.com

@@ -181,19 +181,46 @@ const SmartLabOrder: React.FC = () => {
         }
     };
 
-    // Fuzzy search filter for tests
+    // Fuzzy search filter for tests with acronym support
     const filterTests = (searchTerm: string) => {
         if (!searchTerm.trim()) {
             setFilteredTests([]);
             return;
         }
 
-        const term = searchTerm.toLowerCase();
-        const results = availableTests.filter(test =>
-            test.name.toLowerCase().includes(term) ||
-            test.code.toLowerCase().includes(term) ||
-            (test.description && test.description.toLowerCase().includes(term))
-        ).slice(0, 10); // Limit to 10 results
+        const term = searchTerm.toLowerCase().trim();
+
+        // Helper function to extract acronym from test name
+        const getAcronym = (name: string): string => {
+            // Extract letter-based acronyms in parentheses (e.g., "TSH" from "Thyroid Cascade (TSH w/ Reflex)")
+            // But NOT numbers like "(14)"
+            const parenMatch = name.match(/\(([A-Z]{2,})/);
+            if (parenMatch) return parenMatch[1].toLowerCase();
+
+            // Extract capital letters to form acronym (e.g., "CMP" from "Comprehensive Metabolic Panel")
+            const words = name.split(/[\s,]+/);
+            const acronym = words
+                .filter(word => /^[A-Z]/.test(word)) // Only words starting with capital letter
+                .map(word => word[0])
+                .join('')
+                .toLowerCase();
+            return acronym;
+        };
+
+        const results = availableTests.filter(test => {
+            const nameLower = test.name.toLowerCase();
+            const codeLower = test.code.toLowerCase();
+            const descLower = test.description ? test.description.toLowerCase() : '';
+            const acronym = getAcronym(test.name);
+
+            return (
+                nameLower.includes(term) ||
+                codeLower.includes(term) ||
+                descLower.includes(term) ||
+                acronym === term || // Exact acronym match
+                acronym.includes(term) // Partial acronym match
+            );
+        }).slice(0, 10); // Limit to 10 results
 
         setFilteredTests(results);
     };
@@ -247,24 +274,6 @@ const SmartLabOrder: React.FC = () => {
 
     const handleRemoveDiagnosis = (diagnosisCode: string) => {
         setSelectedDiagnoses(selectedDiagnoses.filter(d => d !== diagnosisCode));
-    };
-
-    // Toggle functions for checkbox lists (legacy UI, will be replaced)
-    const handleToggleTest = (test: LabTest) => {
-        const isSelected = selectedTests.find(t => t.code === test.code);
-        if (isSelected) {
-            setSelectedTests(selectedTests.filter(t => t.code !== test.code));
-        } else {
-            setSelectedTests([...selectedTests, test]);
-        }
-    };
-
-    const handleToggleDiagnosis = (diagnosisCode: string) => {
-        if (selectedDiagnoses.includes(diagnosisCode)) {
-            setSelectedDiagnoses(selectedDiagnoses.filter(d => d !== diagnosisCode));
-        } else {
-            setSelectedDiagnoses([...selectedDiagnoses, diagnosisCode]);
-        }
     };
 
     const handleReviewOrder = () => {
@@ -393,20 +402,23 @@ const SmartLabOrder: React.FC = () => {
                         <div className="search-section">
                             <div className="form-group">
                                 <label>Patient Name *</label>
-                                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-end' }}>
-                                    <div style={{ flex: 1 }}>
-                                        <input
-                                            type="text"
-                                            value={searchName}
-                                            onChange={(e) => setSearchName(e.target.value)}
-                                            onKeyPress={(e) => e.key === 'Enter' && handleSearchPatients()}
-                                            placeholder="Enter patient first or last name"
-                                            style={{ fontSize: '1rem', padding: '0.75rem', width: '100%' }}
-                                        />
-                                        <small style={{ color: '#6b7280', marginTop: '0.25rem', display: 'block' }}>
-                                            Searches both first and last names
-                                        </small>
-                                    </div>
+                                <small style={{ color: '#6b7280', marginTop: '0.25rem', marginBottom: '0.5rem', display: 'block' }}>
+                                    Searches both first and last names
+                                </small>
+                                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                                    <input
+                                        type="text"
+                                        value={searchName}
+                                        onChange={(e) => setSearchName(e.target.value)}
+                                        onKeyPress={(e) => e.key === 'Enter' && handleSearchPatients()}
+                                        placeholder="Enter patient first or last name"
+                                        style={{
+                                            fontSize: '1rem',
+                                            padding: '0.75rem',
+                                            flex: 1,
+                                            height: '3rem'
+                                        }}
+                                    />
                                     <button
                                         className="btn btn-primary"
                                         onClick={handleSearchPatients}
@@ -415,7 +427,8 @@ const SmartLabOrder: React.FC = () => {
                                             fontSize: '1rem',
                                             padding: '0.75rem 1.5rem',
                                             height: '3rem',
-                                            whiteSpace: 'nowrap'
+                                            whiteSpace: 'nowrap',
+                                            minWidth: '120px'
                                         }}
                                     >
                                         {isSearching ? 'Searching...' : 'Search'}
@@ -526,103 +539,231 @@ const SmartLabOrder: React.FC = () => {
                             </div>
                         )}
 
-                        {/* Tests Section */}
+                        {/* Tests Section - Fuzzy Search */}
                         <div className="tests-section" style={{ marginBottom: '3rem' }}>
                             <h3 style={{ marginBottom: '1rem' }}>Select Lab Tests</h3>
-                            <div className="selected-summary" style={{
-                                background: '#eff6ff',
-                                padding: '0.75rem',
-                                borderRadius: '0.375rem',
-                                marginBottom: '1rem'
-                            }}>
-                                <strong>{selectedTests.length}</strong> test(s) selected
-                            </div>
 
-                            {Object.entries(groupedTests).map(([category, tests]) => (
-                                <div key={category} className="test-category" style={{ marginBottom: '1.5rem' }}>
-                                    <h4 style={{
-                                        background: '#f9fafb',
+                            {/* Search input */}
+                            <div style={{ position: 'relative', marginBottom: '1rem' }}>
+                                <input
+                                    type="text"
+                                    value={testSearch}
+                                    onChange={(e) => handleTestSearchChange(e.target.value)}
+                                    placeholder="Search tests (e.g., 'CMP', 'comp', 'thyroid')..."
+                                    style={{
+                                        width: '100%',
                                         padding: '0.75rem',
-                                        marginBottom: '0.5rem',
+                                        fontSize: '1rem',
+                                        border: '2px solid #d1d5db',
+                                        borderRadius: '0.375rem'
+                                    }}
+                                />
+                                <small style={{ color: '#6b7280', display: 'block', marginTop: '0.25rem' }}>
+                                    Type to search by test name or code
+                                </small>
+
+                                {/* Autocomplete dropdown */}
+                                {filteredTests.length > 0 && (
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: '100%',
+                                        left: 0,
+                                        right: 0,
+                                        marginTop: '0.25rem',
+                                        background: 'white',
+                                        border: '1px solid #d1d5db',
                                         borderRadius: '0.375rem',
-                                        fontWeight: '600'
+                                        maxHeight: '300px',
+                                        overflowY: 'auto',
+                                        boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                                        zIndex: 10
                                     }}>
-                                        {category}
-                                    </h4>
-                                    <div className="test-list">
-                                        {tests.map((test) => (
-                                            <label
+                                        {filteredTests.map(test => (
+                                            <div
                                                 key={test.code}
-                                                className="test-checkbox"
+                                                onClick={() => handleAddTest(test)}
                                                 style={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
                                                     padding: '0.75rem',
                                                     cursor: 'pointer',
-                                                    borderBottom: '1px solid #e5e7eb'
+                                                    borderBottom: '1px solid #f3f4f6',
+                                                    transition: 'background 0.2s'
                                                 }}
+                                                onMouseEnter={(e) => e.currentTarget.style.background = '#f9fafb'}
+                                                onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
                                             >
-                                                <input
-                                                    type="checkbox"
-                                                    checked={selectedTests.some(t => t.code === test.code)}
-                                                    onChange={() => handleToggleTest(test)}
-                                                    style={{ marginRight: '0.75rem', width: '18px', height: '18px' }}
-                                                />
-                                                <div>
-                                                    <strong>{test.name}</strong>
-                                                    <span style={{ color: '#6b7280', marginLeft: '0.5rem' }}>
-                                                        (Code: {test.code})
-                                                    </span>
-                                                    {test.description && (
-                                                        <div style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '0.25rem' }}>
-                                                            {test.description}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </label>
+                                                <strong>{test.name}</strong>
+                                                <br />
+                                                <small style={{ color: '#6b7280' }}>
+                                                    Code: {test.code} {test.category && `• ${test.category}`}
+                                                </small>
+                                            </div>
                                         ))}
                                     </div>
-                                </div>
-                            ))}
-                        </div>
-
-                        {/* Diagnoses Section */}
-                        <div className="diagnoses-section">
-                            <h3 style={{ marginBottom: '1rem' }}>Select Diagnoses (ICD-10 Codes)</h3>
-                            <div className="selected-summary" style={{
-                                background: '#fef3c7',
-                                padding: '0.75rem',
-                                borderRadius: '0.375rem',
-                                marginBottom: '1rem'
-                            }}>
-                                <strong>{selectedDiagnoses.length}</strong> diagnosis/diagnoses selected
+                                )}
                             </div>
 
-                            <div className="diagnosis-list">
-                                {availableDiagnoses.map((diagnosis) => (
-                                    <label
-                                        key={diagnosis.code}
-                                        className="diagnosis-checkbox"
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            padding: '0.75rem',
-                                            cursor: 'pointer',
-                                            borderBottom: '1px solid #e5e7eb'
-                                        }}
-                                    >
-                                        <input
-                                            type="checkbox"
-                                            checked={selectedDiagnoses.includes(diagnosis.code)}
-                                            onChange={() => handleToggleDiagnosis(diagnosis.code)}
-                                            style={{ marginRight: '0.75rem', width: '18px', height: '18px' }}
-                                        />
-                                        <div>
-                                            <strong>{diagnosis.code}</strong>
-                                            <span style={{ marginLeft: '0.75rem' }}>{diagnosis.description}</span>
-                                        </div>
-                                    </label>
-                                ))}
+                            {/* Selected tests - shown as chips */}
+                            <div className="selected-tests">
+                                <div style={{
+                                    background: '#eff6ff',
+                                    padding: '0.75rem',
+                                    borderRadius: '0.375rem',
+                                    marginBottom: '1rem'
+                                }}>
+                                    <strong>{selectedTests.length}</strong> test(s) selected
+                                </div>
+
+                                {selectedTests.length > 0 && (
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                        {selectedTests.map(test => (
+                                            <div
+                                                key={test.code}
+                                                style={{
+                                                    background: '#3b82f6',
+                                                    color: 'white',
+                                                    padding: '0.5rem 1rem',
+                                                    borderRadius: '9999px',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '0.5rem'
+                                                }}
+                                            >
+                                                <span>{test.name}</span>
+                                                <button
+                                                    onClick={() => handleRemoveTest(test.code)}
+                                                    style={{
+                                                        background: 'rgba(255,255,255,0.3)',
+                                                        border: 'none',
+                                                        borderRadius: '50%',
+                                                        width: '20px',
+                                                        height: '20px',
+                                                        cursor: 'pointer',
+                                                        fontSize: '0.875rem',
+                                                        fontWeight: 'bold',
+                                                        color: 'white'
+                                                    }}
+                                                >
+                                                    ×
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Diagnoses Section - Fuzzy Search */}
+                        <div className="diagnoses-section" style={{ marginBottom: '3rem' }}>
+                            <h3 style={{ marginBottom: '1rem' }}>Select Diagnosis Codes</h3>
+                            <p style={{ color: '#6b7280', marginBottom: '1rem', fontSize: '0.875rem' }}>
+                                Note: Exact diagnosis subtype isn't critical for lab coverage. "Bipolar" is sufficient.
+                            </p>
+
+                            {/* Search input */}
+                            <div style={{ position: 'relative', marginBottom: '1rem' }}>
+                                <input
+                                    type="text"
+                                    value={diagnosisSearch}
+                                    onChange={(e) => handleDiagnosisSearchChange(e.target.value)}
+                                    placeholder="Search diagnoses (e.g., 'bipolar', 'bip', 'depression')..."
+                                    style={{
+                                        width: '100%',
+                                        padding: '0.75rem',
+                                        fontSize: '1rem',
+                                        border: '2px solid #d1d5db',
+                                        borderRadius: '0.375rem'
+                                    }}
+                                />
+                                <small style={{ color: '#6b7280', display: 'block', marginTop: '0.25rem' }}>
+                                    Type to search by condition name or ICD-10 code
+                                </small>
+
+                                {/* Autocomplete dropdown */}
+                                {filteredDiagnoses.length > 0 && (
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: '100%',
+                                        left: 0,
+                                        right: 0,
+                                        marginTop: '0.25rem',
+                                        background: 'white',
+                                        border: '1px solid #d1d5db',
+                                        borderRadius: '0.375rem',
+                                        maxHeight: '300px',
+                                        overflowY: 'auto',
+                                        boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                                        zIndex: 10
+                                    }}>
+                                        {filteredDiagnoses.map(diagnosis => (
+                                            <div
+                                                key={diagnosis.code}
+                                                onClick={() => handleAddDiagnosis(diagnosis)}
+                                                style={{
+                                                    padding: '0.75rem',
+                                                    cursor: 'pointer',
+                                                    borderBottom: '1px solid #f3f4f6',
+                                                    transition: 'background 0.2s'
+                                                }}
+                                                onMouseEnter={(e) => e.currentTarget.style.background = '#f9fafb'}
+                                                onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                                            >
+                                                <strong>{diagnosis.code}</strong> - {diagnosis.description}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Selected diagnoses - shown as chips */}
+                            <div className="selected-diagnoses">
+                                <div style={{
+                                    background: '#eff6ff',
+                                    padding: '0.75rem',
+                                    borderRadius: '0.375rem',
+                                    marginBottom: '1rem'
+                                }}>
+                                    <strong>{selectedDiagnoses.length}</strong> diagnosis code(s) selected
+                                </div>
+
+                                {selectedDiagnoses.length > 0 && (
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                        {selectedDiagnoses.map(diagnosisCode => {
+                                            const diagnosis = availableDiagnoses.find(d => d.code === diagnosisCode);
+                                            return (
+                                                <div
+                                                    key={diagnosisCode}
+                                                    style={{
+                                                        background: '#10b981',
+                                                        color: 'white',
+                                                        padding: '0.5rem 1rem',
+                                                        borderRadius: '9999px',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '0.5rem'
+                                                    }}
+                                                >
+                                                    <span>{diagnosisCode} {diagnosis && `- ${diagnosis.description}`}</span>
+                                                    <button
+                                                        onClick={() => handleRemoveDiagnosis(diagnosisCode)}
+                                                        style={{
+                                                            background: 'rgba(255,255,255,0.3)',
+                                                            border: 'none',
+                                                            borderRadius: '50%',
+                                                            width: '20px',
+                                                            height: '20px',
+                                                            cursor: 'pointer',
+                                                            fontSize: '0.875rem',
+                                                            fontWeight: 'bold',
+                                                            color: 'white'
+                                                        }}
+                                                    >
+                                                        ×
+                                                    </button>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
                             </div>
                         </div>
 

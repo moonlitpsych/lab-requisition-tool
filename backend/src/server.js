@@ -59,6 +59,12 @@ app.use(express.urlencoded({ extended: true }));
 // Serve screenshots directory as static files
 app.use('/screenshots', express.static(path.join(__dirname, '../test-screenshots')));
 
+// Serve frontend static files in production
+if (process.env.NODE_ENV === 'production') {
+    // Serve static files from React build
+    app.use(express.static(path.join(__dirname, '../../frontend/build')));
+}
+
 // Health check endpoint
 app.get('/health', (req, res) => {
     res.json({
@@ -111,10 +117,17 @@ app.use((err, req, res, next) => {
     });
 });
 
-// 404 handler
-app.use((req, res) => {
-    res.status(404).json({ error: 'Route not found' });
-});
+// Serve React app for all other routes (SPA support) in production
+if (process.env.NODE_ENV === 'production') {
+    app.get('*', (req, res) => {
+        res.sendFile(path.join(__dirname, '../../frontend/build/index.html'));
+    });
+} else {
+    // 404 handler for development
+    app.use((req, res) => {
+        res.status(404).json({ error: 'Route not found' });
+    });
+}
 
 // Initialize services and start server
 async function startServer() {
