@@ -12,7 +12,8 @@ root.render(
     <React.StrictMode>
         <BrowserRouter>
             <Routes>
-                <Route path="/" element={<App />} />
+                <Route path="/" element={<SmartLabOrder />} />
+                <Route path="/classic" element={<App />} />
                 <Route path="/smart-lab-order" element={<SmartLabOrder />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
