@@ -281,13 +281,25 @@ class MedicaidEligibilityService {
                 logger.debug('Received SOAP response from Office Ally');
                 logger.debug('Response length:', responseText.length);
 
-                // Save response to file for debugging
-                const fs = require('fs');
-                const path = require('path');
-                const debugTimestamp = new Date().toISOString().replace(/[:.]/g, '-');
-                const debugFile = path.join(__dirname, '../..', 'test-screenshots', `soap-response-${debugTimestamp}.xml`);
-                fs.writeFileSync(debugFile, responseText);
-                logger.debug(`SOAP response saved to: ${debugFile}`);
+                // Save response to file for debugging (optional - don't fail if directory doesn't exist)
+                try {
+                    const fs = require('fs');
+                    const path = require('path');
+                    const debugTimestamp = new Date().toISOString().replace(/[:.]/g, '-');
+                    const debugDir = path.join(__dirname, '../..', 'test-screenshots');
+                    const debugFile = path.join(debugDir, `soap-response-${debugTimestamp}.xml`);
+
+                    // Create directory if it doesn't exist
+                    if (!fs.existsSync(debugDir)) {
+                        fs.mkdirSync(debugDir, { recursive: true });
+                    }
+
+                    fs.writeFileSync(debugFile, responseText);
+                    logger.debug(`SOAP response saved to: ${debugFile}`);
+                } catch (debugError) {
+                    // Don't fail eligibility check if we can't save debug file
+                    logger.warn('Could not save SOAP response to file:', debugError.message);
+                }
 
                 // Extract X12 271 from CORE SOAP response
                 // Try multiple patterns: with CDATA, without CDATA, with xmlns="", etc.
