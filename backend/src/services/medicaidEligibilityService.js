@@ -60,6 +60,11 @@ class MedicaidEligibilityService {
      */
     async checkEligibility(patientInfo) {
         try {
+            // Validate Office Ally credentials are configured
+            if (!this.config.username || !this.config.password) {
+                throw new Error('Office Ally credentials not configured. Please set OFFICE_ALLY_USERNAME and OFFICE_ALLY_PASSWORD environment variables.');
+            }
+
             logger.info(`Checking Medicaid eligibility for: ${patientInfo.firstName} ${patientInfo.lastName}`);
 
             // Generate X12 270 request using database-driven approach

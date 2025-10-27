@@ -104,10 +104,15 @@ router.post('/check-eligibility', async (req, res) => {
         });
 
     } catch (error) {
-        logger.error('Eligibility check failed:', error);
+        logger.error('Eligibility check failed:', {
+            message: error.message,
+            stack: error.stack,
+            fullError: error
+        });
         res.status(500).json({
             error: 'Failed to check eligibility',
-            message: error.message
+            message: error.message,
+            details: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
     }
 });
