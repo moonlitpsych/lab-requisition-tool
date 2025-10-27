@@ -3,14 +3,14 @@
   "version": "1.0.0",
   "description": "MOONLIT Lab Portal - Full stack application with Labcorp automation",
   "scripts": {
-    "install:all": "cd frontend && npm install && cd ../backend && npm install",
-    "build:frontend": "cd frontend && npm run build",
+    "install:frontend": "cd frontend && npm install --legacy-peer-deps",
+    "install:backend": "cd backend && npm install",
+    "build:frontend": "cd frontend && npm install --legacy-peer-deps && npm run build",
     "build:backend": "cd backend && npm install --production",
     "build:all": "npm run build:frontend && npm run build:backend && npx playwright install chromium",
     "start:prod": "cd backend && NODE_ENV=production node src/server.js",
     "dev:frontend": "cd frontend && npm start",
-    "dev:backend": "cd backend && npm run dev",
-    "test:build": "npm run build:frontend && NODE_ENV=production cd backend && node src/server.js"
+    "dev:backend": "cd backend && npm run dev"
   },
   "keywords": ["lab", "automation", "medical", "labcorp", "healthcare"],
   "author": "MOONLIT",
