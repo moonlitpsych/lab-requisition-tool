@@ -1,9 +1,10 @@
-/* Smart Lab Order Page Styles */
+/* Smart Lab Order Page Styles - Moonlit Themed */
 
 .smart-lab-order {
     max-width: 1200px;
     margin: 0 auto;
     padding: 20px;
+    background-color: #F5F1ED; /* Cream background */
 }
 
 .page-header {
@@ -12,12 +13,13 @@
 }
 
 .page-header h1 {
-    color: #2c3e50;
+    color: #0A1F3D; /* Navy */
     margin-bottom: 10px;
+    font-family: 'Playfair Display', 'Baskerville', 'Georgia', serif;
 }
 
 .page-header p {
-    color: #7f8c8d;
+    color: #4e5f7e; /* Light navy */
     font-size: 16px;
 }
 
@@ -50,8 +52,8 @@
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background-color: #ecf0f1;
-    color: #7f8c8d;
+    background-color: #ede7e1; /* Light cream */
+    color: #6f7e97; /* Muted navy */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -61,12 +63,12 @@
 }
 
 .step.active .step-number {
-    background-color: #3498db;
+    background-color: #E89C8A; /* Terracotta */
     color: white;
 }
 
 .step.completed .step-number {
-    background-color: #27ae60;
+    background-color: #C5A882; /* Taupe */
     color: white;
 }
 
@@ -76,28 +78,29 @@
 
 .step-label {
     font-size: 14px;
-    color: #7f8c8d;
+    color: #6f7e97; /* Muted navy */
     text-align: center;
 }
 
 .step.active .step-label {
-    color: #2c3e50;
+    color: #0A1F3D; /* Navy */
     font-weight: 600;
 }
 
 /* Order Content */
 .order-content {
     background-color: white;
-    border-radius: 8px;
+    border-radius: 12px;
     padding: 30px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(10, 31, 61, 0.05); /* Soft navy shadow */
 }
 
 .step-content h2 {
-    color: #2c3e50;
+    color: #0A1F3D; /* Navy */
     margin-bottom: 20px;
     padding-bottom: 10px;
-    border-bottom: 2px solid #ecf0f1;
+    border-bottom: 2px solid #ede7e1; /* Light cream border */
+    font-family: 'Playfair Display', 'Baskerville', 'Georgia', serif;
 }
 
 /* Search Section */
@@ -116,43 +119,55 @@
 .form-group label {
     font-weight: 600;
     margin-bottom: 5px;
-    color: #2c3e50;
+    color: #0A1F3D; /* Navy */
 }
 
 .form-group input {
     padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+    border: 1px solid #e0d7ce; /* Light cream border */
+    border-radius: 8px;
     font-size: 16px;
+    background-color: white;
+    color: #0A1F3D;
+    transition: all 0.3s;
 }
 
-/* Buttons */
+.form-group input:focus {
+    outline: none;
+    border-color: #C5A882; /* Taupe focus */
+    box-shadow: 0 2px 4px rgba(197, 168, 130, 0.1);
+}
+
+/* Buttons - Moonlit themed */
 .btn {
-    padding: 10px 20px;
+    padding: 12px 24px;
     border: none;
-    border-radius: 4px;
+    border-radius: 8px;
     cursor: pointer;
     font-size: 16px;
-    font-weight: 600;
+    font-weight: 500;
     transition: all 0.3s;
 }
 
 .btn-primary {
-    background-color: #3498db;
+    background-color: #C5A882; /* Taupe */
     color: white;
 }
 
 .btn-primary:hover:not(:disabled) {
-    background-color: #2980b9;
+    background-color: #a38654; /* Darker taupe */
+    box-shadow: 0 4px 12px rgba(197, 168, 130, 0.25);
 }
 
 .btn-secondary {
-    background-color: #95a5a6;
-    color: white;
+    background-color: transparent;
+    color: #C5A882;
+    border: 1.5px solid #C5A882;
 }
 
 .btn-secondary:hover {
-    background-color: #7f8c8d;
+    background-color: rgba(197, 168, 130, 0.1);
+    border-color: #a38654;
 }
 
 .btn:disabled {
@@ -177,33 +192,34 @@
 
 .patient-card {
     padding: 15px;
-    border: 2px solid #ecf0f1;
+    border: 2px solid #ede7e1; /* Light cream border */
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.3s;
+    background-color: white;
 }
 
 .patient-card:hover {
-    border-color: #3498db;
-    box-shadow: 0 2px 8px rgba(52, 152, 219, 0.2);
+    border-color: #E89C8A; /* Terracotta hover */
+    box-shadow: 0 2px 8px rgba(232, 156, 138, 0.2);
 }
 
 .patient-card.selected {
-    border-color: #27ae60;
-    background-color: #d5f4e6;
+    border-color: #C5A882; /* Taupe selected */
+    background-color: #f7f4ef; /* Very light taupe background */
 }
 
 .patient-name {
     font-size: 18px;
     font-weight: 600;
-    color: #2c3e50;
+    color: #0A1F3D; /* Navy */
     margin-bottom: 5px;
 }
 
 .patient-details {
     display: flex;
     gap: 20px;
-    color: #7f8c8d;
+    color: #4e5f7e; /* Light navy */
     font-size: 14px;
 }
 
@@ -211,8 +227,9 @@
 .selected-patient-info {
     margin-top: 30px;
     padding: 20px;
-    background-color: #f8f9fa;
+    background-color: #fdfbf9; /* Very light cream */
     border-radius: 8px;
+    border: 1px solid #ede7e1;
 }
 
 .info-card {
@@ -232,16 +249,16 @@
     align-items: center;
     gap: 10px;
     padding: 15px;
-    background-color: #fff3cd;
-    border-radius: 4px;
+    background-color: #F5C8B3; /* Soft peach */
+    border-radius: 8px;
     margin: 15px 0;
 }
 
 .spinner {
     width: 20px;
     height: 20px;
-    border: 3px solid #f3f3f3;
-    border-top: 3px solid #3498db;
+    border: 3px solid #f7f4ef;
+    border-top: 3px solid #E89C8A; /* Terracotta spinner */
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }
@@ -258,51 +275,52 @@
 }
 
 .eligibility-status.eligible {
-    background-color: #d5f4e6;
-    border: 1px solid #27ae60;
+    background-color: #D4F1E8; /* Mint */
+    border: 1px solid #a8d6c3;
 }
 
 .eligibility-status.not-eligible {
-    background-color: #fdecea;
-    border: 1px solid #e74c3c;
+    background-color: #fae8e0; /* Light coral */
+    border: 1px solid #F5D6C8;
 }
 
 .status-badge {
     display: inline-block;
     padding: 5px 15px;
-    border-radius: 20px;
+    border-radius: 9999px; /* Pill shape */
     font-weight: 600;
     font-size: 14px;
 }
 
 .status-badge.success {
-    background-color: #27ae60;
-    color: white;
+    background-color: #D4F1E8; /* Mint */
+    color: #0A1F3D; /* Navy text */
 }
 
 .status-badge.warning {
-    background-color: #f39c12;
-    color: white;
+    background-color: #F5D6C8; /* Light coral */
+    color: #0A1F3D; /* Navy text */
 }
 
 .plan-type {
-    color: #16a085;
+    color: #C5A882; /* Taupe */
     font-weight: 500;
 }
 
 .address-info {
     font-size: 14px;
-    color: #7f8c8d;
+    color: #4e5f7e; /* Light navy */
     margin-top: 10px;
 }
 
 /* Test Selection */
 .selected-count {
-    background-color: #ecf0f1;
+    background-color: #f7f4ef; /* Very light taupe */
     padding: 10px 15px;
-    border-radius: 4px;
+    border-radius: 8px;
     margin-bottom: 20px;
     font-weight: 600;
+    color: #0A1F3D; /* Navy */
 }
 
 .tests-grid {
@@ -311,11 +329,12 @@
 }
 
 .test-category h3 {
-    color: #2c3e50;
+    color: #0A1F3D; /* Navy */
     font-size: 18px;
     margin-bottom: 15px;
     padding-bottom: 8px;
-    border-bottom: 2px solid #3498db;
+    border-bottom: 2px solid #E89C8A; /* Terracotta accent */
+    font-family: 'Playfair Display', 'Baskerville', serif;
 }
 
 .test-list {
@@ -328,24 +347,26 @@
     align-items: flex-start;
     gap: 10px;
     padding: 12px;
-    border: 2px solid #ecf0f1;
-    border-radius: 6px;
+    border: 2px solid #ede7e1; /* Light cream */
+    border-radius: 8px;
     cursor: pointer;
     transition: all 0.3s;
+    background-color: white;
 }
 
 .test-item:hover {
-    border-color: #3498db;
-    background-color: #f8f9fa;
+    border-color: #E89C8A; /* Terracotta */
+    background-color: #fdfbf9; /* Very light cream */
 }
 
 .test-item.selected {
-    border-color: #27ae60;
-    background-color: #d5f4e6;
+    border-color: #C5A882; /* Taupe */
+    background-color: #f7f4ef; /* Very light taupe */
 }
 
 .test-item input[type="checkbox"] {
     margin-top: 2px;
+    accent-color: #C5A882; /* Taupe checkbox */
 }
 
 .test-info {
@@ -354,19 +375,19 @@
 
 .test-name {
     font-weight: 600;
-    color: #2c3e50;
+    color: #0A1F3D; /* Navy */
     margin-bottom: 3px;
 }
 
 .test-code {
     font-size: 12px;
-    color: #7f8c8d;
+    color: #6f7e97; /* Muted navy */
     margin-bottom: 3px;
 }
 
 .test-description {
     font-size: 13px;
-    color: #95a5a6;
+    color: #98a3b5; /* Light navy-gray */
     font-style: italic;
 }
 
@@ -384,24 +405,26 @@
     align-items: flex-start;
     gap: 10px;
     padding: 12px;
-    border: 2px solid #ecf0f1;
-    border-radius: 6px;
+    border: 2px solid #ede7e1; /* Light cream */
+    border-radius: 8px;
     cursor: pointer;
     transition: all 0.3s;
+    background-color: white;
 }
 
 .diagnosis-item:hover {
-    border-color: #3498db;
-    background-color: #f8f9fa;
+    border-color: #E89C8A; /* Terracotta */
+    background-color: #fdfbf9; /* Very light cream */
 }
 
 .diagnosis-item.selected {
-    border-color: #27ae60;
-    background-color: #d5f4e6;
+    border-color: #C5A882; /* Taupe */
+    background-color: #f7f4ef; /* Very light taupe */
 }
 
 .diagnosis-item input[type="checkbox"] {
     margin-top: 2px;
+    accent-color: #C5A882; /* Taupe checkbox */
 }
 
 .diagnosis-info {
@@ -410,12 +433,12 @@
 
 .diagnosis-code {
     font-weight: 600;
-    color: #e74c3c;
+    color: #E89C8A; /* Terracotta for codes */
     margin-bottom: 3px;
 }
 
 .diagnosis-description {
-    color: #2c3e50;
+    color: #0A1F3D; /* Navy */
     font-size: 14px;
 }
 
@@ -425,13 +448,13 @@
     justify-content: space-between;
     margin-top: 30px;
     padding-top: 20px;
-    border-top: 1px solid #ecf0f1;
+    border-top: 1px solid #ede7e1; /* Light cream */
 }
 
 /* Order Status */
 .order-status-card {
     padding: 20px;
-    background-color: #f8f9fa;
+    background-color: #fdfbf9; /* Very light cream */
     border-radius: 8px;
 }
 
@@ -441,34 +464,35 @@
     align-items: center;
     margin-bottom: 20px;
     padding-bottom: 15px;
-    border-bottom: 2px solid #ecf0f1;
+    border-bottom: 2px solid #ede7e1; /* Light cream */
 }
 
 .status-header h3 {
     margin: 0;
-    color: #2c3e50;
+    color: #0A1F3D; /* Navy */
+    font-family: 'Playfair Display', serif;
 }
 
 .status-badge.processing {
-    background-color: #3498db;
-    color: white;
+    background-color: #f8d4cc; /* Light terracotta */
+    color: #0A1F3D; /* Navy text */
 }
 
 .status-badge.completed {
-    background-color: #27ae60;
-    color: white;
+    background-color: #D4F1E8; /* Mint */
+    color: #0A1F3D; /* Navy text */
 }
 
 .status-badge.failed {
-    background-color: #e74c3c;
-    color: white;
+    background-color: #fae8e0; /* Light coral */
+    color: #91493a; /* Dark terracotta */
 }
 
 .status-message {
     padding: 15px;
-    background-color: #d1ecf1;
-    border: 1px solid #bee5eb;
-    border-radius: 4px;
+    background-color: #e5f7f1; /* Light mint */
+    border: 1px solid #D4F1E8; /* Mint border */
+    border-radius: 8px;
     margin-bottom: 20px;
 }
 

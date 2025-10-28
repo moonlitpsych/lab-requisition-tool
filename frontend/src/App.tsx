@@ -20,58 +20,103 @@ import Settings from './pages/Settings';
 import { SocketProvider } from './contexts/SocketContext';
 import { AuthProvider } from './contexts/AuthContext';
 
-// Create theme
+// Create Moonlit theme
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#2563eb', // Blue
-      light: '#60a5fa',
-      dark: '#1e40af',
+      main: '#C5A882', // Tan/Taupe - Primary buttons and interactions
+      light: '#ddd0bc',
+      dark: '#a38654',
+      contrastText: '#ffffff',
     },
     secondary: {
-      main: '#7c3aed', // Purple
-      light: '#a78bfa',
-      dark: '#5b21b6',
+      main: '#E89C8A', // Terracotta/Salmon - Accent color
+      light: '#f3baa9',
+      dark: '#d56f56',
+      contrastText: '#ffffff',
     },
     success: {
-      main: '#10b981',
+      main: '#D4F1E8', // Mint green
+      dark: '#a8d6c3',
+      contrastText: '#0A1F3D',
     },
     error: {
-      main: '#ef4444',
+      main: '#d56f56', // Soft red from terracotta family
+      light: '#f3baa9',
+      dark: '#b55944',
+      contrastText: '#ffffff',
     },
     warning: {
-      main: '#f59e0b',
+      main: '#F5D6C8', // Light coral
+      dark: '#e2b8a4',
+      contrastText: '#0A1F3D',
+    },
+    info: {
+      main: '#6f7e97', // Soft navy-gray
+      light: '#98a3b5',
+      dark: '#4e5f7e',
+      contrastText: '#ffffff',
     },
     background: {
-      default: '#f8fafc',
+      default: '#F5F1ED', // Cream background
       paper: '#ffffff',
+    },
+    text: {
+      primary: '#0A1F3D', // Navy for primary text
+      secondary: '#4e5f7e', // Lighter navy for secondary text
     },
   },
   typography: {
     fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+    // Headings use serif font
     h1: {
+      fontFamily: '"Baskerville", "Georgia", "Caslon", "Times New Roman", serif',
       fontSize: '2.5rem',
-      fontWeight: 600,
+      fontWeight: 500,
+      color: '#0A1F3D',
+      letterSpacing: '-0.01em',
     },
     h2: {
+      fontFamily: '"Baskerville", "Georgia", "Caslon", "Times New Roman", serif',
       fontSize: '2rem',
-      fontWeight: 600,
+      fontWeight: 500,
+      color: '#0A1F3D',
+      letterSpacing: '-0.01em',
     },
     h3: {
+      fontFamily: '"Baskerville", "Georgia", "Caslon", "Times New Roman", serif',
       fontSize: '1.75rem',
-      fontWeight: 600,
+      fontWeight: 500,
+      color: '#0A1F3D',
+      letterSpacing: '-0.01em',
     },
     h4: {
+      fontFamily: '"Baskerville", "Georgia", "Caslon", "Times New Roman", serif',
       fontSize: '1.5rem',
-      fontWeight: 600,
+      fontWeight: 500,
+      color: '#0A1F3D',
     },
     h5: {
+      fontFamily: '"Baskerville", "Georgia", "Caslon", "Times New Roman", serif',
       fontSize: '1.25rem',
-      fontWeight: 600,
+      fontWeight: 500,
+      color: '#0A1F3D',
     },
     h6: {
+      fontFamily: '"Baskerville", "Georgia", "Caslon", "Times New Roman", serif',
+      fontSize: '1.1rem',
+      fontWeight: 500,
+      color: '#0A1F3D',
+    },
+    body1: {
       fontSize: '1rem',
-      fontWeight: 600,
+      lineHeight: 1.6,
+      color: '#0A1F3D',
+    },
+    body2: {
+      fontSize: '0.875rem',
+      lineHeight: 1.5,
+      color: '#4e5f7e',
     },
   },
   components: {
@@ -81,6 +126,22 @@ const theme = createTheme({
           textTransform: 'none',
           borderRadius: '8px',
           fontWeight: 500,
+          padding: '10px 24px',
+          boxShadow: 'none',
+          '&:hover': {
+            boxShadow: '0 2px 8px rgba(197, 168, 130, 0.2)',
+          },
+        },
+        contained: {
+          '&:hover': {
+            boxShadow: '0 4px 12px rgba(197, 168, 130, 0.25)',
+          },
+        },
+        outlined: {
+          borderWidth: '1.5px',
+          '&:hover': {
+            borderWidth: '1.5px',
+          },
         },
       },
     },
@@ -88,6 +149,7 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: '12px',
+          boxShadow: '0 2px 8px rgba(10, 31, 61, 0.05)',
         },
       },
     },
@@ -95,7 +157,27 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: '12px',
-          boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1)',
+          boxShadow: '0 2px 8px rgba(10, 31, 61, 0.05)',
+        },
+      },
+    },
+    MuiTextField: {
+      styleOverrides: {
+        root: {
+          '& .MuiOutlinedInput-root': {
+            borderRadius: '8px',
+            '&:hover .MuiOutlinedInput-notchedOutline': {
+              borderColor: '#C5A882',
+            },
+          },
+        },
+      },
+    },
+    MuiChip: {
+      styleOverrides: {
+        root: {
+          borderRadius: '9999px', // Pill shape
+          fontWeight: 500,
         },
       },
     },

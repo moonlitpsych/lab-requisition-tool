@@ -55,16 +55,34 @@ const Layout: React.FC = () => {
   };
 
   const drawer = (
-    <Box>
-      <Toolbar>
+    <Box sx={{ height: '100%', bgcolor: 'background.paper' }}>
+      <Toolbar sx={{ bgcolor: 'cream.50', borderBottom: '1px solid', borderColor: 'cream.300' }}>
         <Box display="flex" alignItems="center" gap={2}>
-          <LabIcon sx={{ color: 'primary.main', fontSize: 32 }} />
+          <Box sx={{
+            width: 40,
+            height: 40,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            bgcolor: 'primary.main',
+            borderRadius: 2,
+          }}>
+            <LabIcon sx={{ color: 'white', fontSize: 24 }} />
+          </Box>
           <Box>
-            <Typography variant="h6" fontWeight={600}>
-              MOONLIT
+            <Typography
+              variant="h6"
+              sx={{
+                fontFamily: '"Playfair Display", serif',
+                fontWeight: 500,
+                color: 'text.primary',
+                letterSpacing: '-0.01em'
+              }}
+            >
+              moonlit
             </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Lab Portal Automation
+            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+              PSYCHIATRY LAB PORTAL
             </Typography>
           </Box>
         </Box>
@@ -85,8 +103,12 @@ const Layout: React.FC = () => {
                 selected={isActive}
                 sx={{
                   borderRadius: 2,
+                  transition: 'all 0.3s',
+                  '&:hover': {
+                    bgcolor: 'rgba(197, 168, 130, 0.1)', // Taupe with transparency
+                  },
                   '&.Mui-selected': {
-                    bgcolor: 'primary.main',
+                    bgcolor: 'primary.main', // Taupe
                     color: 'white',
                     '&:hover': {
                       bgcolor: 'primary.dark',
@@ -110,8 +132,15 @@ const Layout: React.FC = () => {
                   <Chip
                     label="Quick"
                     size="small"
-                    color="success"
-                    sx={{ height: 20 }}
+                    sx={{
+                      height: 20,
+                      bgcolor: 'secondary.main', // Terracotta
+                      color: 'white',
+                      '& .MuiChip-label': {
+                        fontSize: '0.7rem',
+                        fontWeight: 500,
+                      }
+                    }}
                   />
                 )}
               </ListItemButton>
@@ -125,15 +154,19 @@ const Layout: React.FC = () => {
       <Divider />
 
       {/* User Section */}
-      <Box p={2}>
+      <Box p={2} sx={{ bgcolor: 'cream.50', borderTop: '1px solid', borderColor: 'cream.300' }}>
         <Box display="flex" alignItems="center" gap={2} mb={2}>
-          <Avatar sx={{ bgcolor: 'primary.main' }}>MR</Avatar>
+          <Avatar sx={{
+            bgcolor: 'secondary.main', // Terracotta
+            color: 'white',
+            fontWeight: 500,
+          }}>MR</Avatar>
           <Box>
-            <Typography variant="body2" fontWeight={600}>
+            <Typography variant="body2" fontWeight={600} color="text.primary">
               Dr. Reynolds
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              MOONLIT Clinic
+              MOONLIT Psychiatry
             </Typography>
           </Box>
         </Box>
@@ -145,7 +178,7 @@ const Layout: React.FC = () => {
               width: 8,
               height: 8,
               borderRadius: '50%',
-              bgcolor: socket ? 'success.main' : 'error.main',
+              bgcolor: socket ? '#D4F1E8' : 'error.main', // Mint for success
             }}
           />
           <Typography variant="caption" color="text.secondary">
@@ -165,7 +198,9 @@ const Layout: React.FC = () => {
           ml: { sm: `${drawerWidth}px` },
           bgcolor: 'background.paper',
           color: 'text.primary',
-          boxShadow: 1,
+          boxShadow: '0 2px 8px rgba(10, 31, 61, 0.05)',
+          borderBottom: '1px solid',
+          borderColor: 'divider',
         }}
       >
         <Toolbar>
@@ -178,7 +213,17 @@ const Layout: React.FC = () => {
             <MenuIcon />
           </IconButton>
 
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
+          <Typography
+            variant="h6"
+            noWrap
+            component="div"
+            sx={{
+              flexGrow: 1,
+              fontFamily: '"Playfair Display", serif',
+              fontWeight: 500,
+              letterSpacing: '-0.01em'
+            }}
+          >
             {menuItems.find(item => item.path === location.pathname)?.text || 'MOONLIT Lab Portal'}
           </Typography>
 
