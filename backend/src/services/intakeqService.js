@@ -219,13 +219,28 @@ class IntakeQService {
             dateOfBirth = dobDate.toISOString().split('T')[0]; // YYYY-MM-DD
         }
 
+        const email = intakeqPatient.Email || intakeqPatient.email || '';
+
+        // Generate unique ID with multiple fallbacks
+        // Priority: ClientNumber > Id > id > Email > Composite key (name+dob)
+        let uniqueId = intakeqPatient.ClientNumber ||
+                       intakeqPatient.Id ||
+                       intakeqPatient.id ||
+                       email;
+
+        // If still no ID, create a composite key from name + DOB
+        if (!uniqueId) {
+            uniqueId = `${fullName.replace(/\s+/g, '_').toLowerCase()}_${dateOfBirth || 'no_dob'}`;
+            logger.debug(`Generated composite ID for patient ${fullName}: ${uniqueId}`);
+        }
+
         return {
-            intakeqId: intakeqPatient.ClientNumber || intakeqPatient.Id || intakeqPatient.id,
+            intakeqId: uniqueId,
             firstName: firstName,
             lastName: lastName,
             fullName: fullName,
             dateOfBirth: dateOfBirth,
-            email: intakeqPatient.Email || intakeqPatient.email || '',
+            email: email,
             phone: intakeqPatient.Phone || intakeqPatient.phone || intakeqPatient.PhoneNumber || '',
             address: {
                 street: intakeqPatient.Address || intakeqPatient.address?.street || '',

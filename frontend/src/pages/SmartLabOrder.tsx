@@ -87,6 +87,11 @@ const SmartLabOrder: React.FC = () => {
         loadAvailableDiagnoses();
     }, []);
 
+    // Debug: Log when selectedPatient changes
+    useEffect(() => {
+        console.log('selectedPatient state changed:', selectedPatient);
+    }, [selectedPatient]);
+
     // Setup Socket.io for real-time updates
     useEffect(() => {
         const newSocket = io(API_URL);
@@ -129,7 +134,11 @@ const SmartLabOrder: React.FC = () => {
             return;
         }
 
+        // Clear previous selection and eligibility data
+        setSelectedPatient(null);
+        setMedicaidEligibility(null);
         setIsSearching(true);
+
         try {
             const response = await axios.get(`${API_URL}/api/lab-orders/search-patients`, {
                 params: {
@@ -141,10 +150,8 @@ const SmartLabOrder: React.FC = () => {
 
             if (patients.length === 0) {
                 alert('No patients found matching your search');
-            } else if (patients.length === 1) {
-                // Auto-select if only one patient found
-                setSelectedPatient(patients[0]);
             }
+            // Don't auto-select - let user always click radio button
         } catch (error) {
             console.error('Patient search failed:', error);
             alert('Failed to search patients');
@@ -450,6 +457,9 @@ const SmartLabOrder: React.FC = () => {
                                         <label
                                             key={patient.intakeqId}
                                             className={`patient-card ${selectedPatient?.intakeqId === patient.intakeqId ? 'selected' : ''}`}
+                                            onClick={() => {
+                                                console.log('Label clicked for:', patient.firstName, patient.lastName, 'intakeqId:', patient.intakeqId);
+                                            }}
                                             style={{
                                                 cursor: 'pointer',
                                                 display: 'flex',
@@ -461,7 +471,11 @@ const SmartLabOrder: React.FC = () => {
                                                 type="radio"
                                                 name="patient-selection"
                                                 checked={selectedPatient?.intakeqId === patient.intakeqId}
-                                                onChange={() => setSelectedPatient(patient)}
+                                                onChange={() => {
+                                                    console.log('Radio button clicked for patient:', patient.firstName, patient.lastName);
+                                                    setSelectedPatient(patient);
+                                                    console.log('Selected patient state updated');
+                                                }}
                                                 style={{
                                                     width: '20px',
                                                     height: '20px',
