@@ -494,6 +494,31 @@ const SmartLabOrder: React.FC = () => {
                                 </div>
 
                                 <div style={{ marginTop: '2rem', textAlign: 'center' }}>
+                                    {isCheckingEligibility && (
+                                        <div style={{
+                                            background: '#eff6ff',
+                                            padding: '1rem',
+                                            borderRadius: '0.5rem',
+                                            marginBottom: '1rem',
+                                            border: '2px solid #3b82f6',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: '0.75rem'
+                                        }}>
+                                            <div style={{
+                                                width: '20px',
+                                                height: '20px',
+                                                border: '3px solid #e5e7eb',
+                                                borderTop: '3px solid #3b82f6',
+                                                borderRadius: '50%',
+                                                animation: 'spin 1s linear infinite'
+                                            }}></div>
+                                            <span style={{ color: '#3b82f6', fontWeight: '600', fontSize: '1rem' }}>
+                                                Verifying Medicaid eligibility...
+                                            </span>
+                                        </div>
+                                    )}
                                     <button
                                         className="btn btn-primary"
                                         onClick={() => selectedPatient && handleSelectPatient(selectedPatient)}
@@ -501,8 +526,8 @@ const SmartLabOrder: React.FC = () => {
                                         style={{
                                             fontSize: '1.1rem',
                                             padding: '1rem 2rem',
-                                            opacity: !selectedPatient ? 0.5 : 1,
-                                            cursor: !selectedPatient ? 'not-allowed' : 'pointer'
+                                            opacity: !selectedPatient || isCheckingEligibility ? 0.5 : 1,
+                                            cursor: !selectedPatient || isCheckingEligibility ? 'not-allowed' : 'pointer'
                                         }}
                                     >
                                         {isCheckingEligibility ? 'Checking Eligibility...' : 'Select Patient & Continue'}
@@ -521,33 +546,59 @@ const SmartLabOrder: React.FC = () => {
                         {/* Show patient info banner */}
                         {selectedPatient && (
                             <div className="patient-banner" style={{
-                                background: '#f3f4f6',
-                                padding: '1rem',
+                                background: medicaidEligibility?.isEligible ? '#ecfdf5' : '#f3f4f6',
+                                padding: '1.25rem',
                                 borderRadius: '0.5rem',
                                 marginBottom: '2rem',
+                                border: medicaidEligibility?.isEligible ? '2px solid #10b981' : '1px solid #e5e7eb',
                                 display: 'flex',
                                 justifyContent: 'space-between',
                                 alignItems: 'center'
                             }}>
                                 <div>
-                                    <strong>{selectedPatient.firstName} {selectedPatient.lastName}</strong>
-                                    <span style={{ marginLeft: '1rem', color: '#6b7280' }}>
-                                        DOB: {selectedPatient.dateOfBirth}
-                                    </span>
-                                    {medicaidEligibility?.isEligible && (
-                                        <span style={{ marginLeft: '1rem', color: '#10b981', fontWeight: '500' }}>
-                                            ✓ Medicaid Eligible
-                                        </span>
-                                    )}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                                        <strong style={{ fontSize: '1.1rem' }}>
+                                            {selectedPatient.firstName} {selectedPatient.lastName}
+                                        </strong>
+                                        {medicaidEligibility?.isEligible && (
+                                            <span style={{
+                                                background: '#10b981',
+                                                color: 'white',
+                                                padding: '0.25rem 0.75rem',
+                                                borderRadius: '9999px',
+                                                fontSize: '0.875rem',
+                                                fontWeight: '600',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '0.25rem'
+                                            }}>
+                                                <span style={{ fontSize: '1rem' }}>✓</span> Medicaid Verified
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div style={{ color: '#6b7280', fontSize: '0.9rem' }}>
+                                        <span>DOB: {selectedPatient.dateOfBirth}</span>
+                                        {medicaidEligibility?.medicaidId && (
+                                            <span style={{ marginLeft: '1rem' }}>
+                                                • Medicaid ID: {medicaidEligibility.medicaidId}
+                                            </span>
+                                        )}
+                                        {medicaidEligibility?.demographics?.phone && (
+                                            <span style={{ marginLeft: '1rem' }}>
+                                                • Phone: {medicaidEligibility.demographics.phone}
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
                                 <button
                                     onClick={() => setStep(1)}
                                     style={{
-                                        background: 'none',
+                                        background: 'white',
                                         border: '1px solid #d1d5db',
                                         padding: '0.5rem 1rem',
                                         borderRadius: '0.375rem',
-                                        cursor: 'pointer'
+                                        cursor: 'pointer',
+                                        fontWeight: '500'
                                     }}
                                 >
                                     Change Patient
